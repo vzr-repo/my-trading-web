@@ -1,10 +1,10 @@
 ---
-enable: true
-title: "Ready to build your next project with Astro?"
+enable: false
+title: "Zajímá tě data engineering nebo trading research?"
 image: "/images/call-to-action.png"
-description: "Experience the future of web development with Astroplate and Astro. Build lightning-fast static sites with ease and flexibility."
+description: "Podívej se na můj projekt — end-to-end pipeline od stahování dat přes backtesting až po živé dashboardy. Vše open-source na GitHubu."
 button:
-  enable: true
-  label: "Fork Deploy and Edit Online 🚀"
-  link: "https://app.sitepins.com/new/clone?name=Astroplate&repository=https://github.com/zeon-studio/astroplate?aff=astroplate"
+  enable: false
+  label: "Zobrazit Dashboard 📊"
+  link: "/dashboard"
 ---
