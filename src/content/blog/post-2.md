@@ -3,7 +3,7 @@ title: "API rate limity a jiné věci, které mě překvapily"
 meta_title: ""
 description: "Konkrétní problémy, na které jsem narazil při práci s Alpha Vantage API, a jak jsem je vyřešil."
 date: 2026-05-01T23:00:00Z
-image: "/images/image-placeholder.png"
+image: "/images/Post-2.png"
 categories: ["Data Engineering", "Trading"]
 author: "Jakub Vozar"
 tags: ["python", "api", "data engineering"]
