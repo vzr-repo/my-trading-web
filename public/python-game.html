@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PyDrill — učím se Python</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=JetBrains+Mono:wght@400;500;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-2: #1c232c;
+    --border: #30363d;
+    --border-soft: #21262d;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --text-faint: #6e7681;
+    --accent: #FFD43B;
+    --accent-dim: #d4af2f;
+    --blue: #4B8BBE;
+    --success: #3fb950;
+    --success-soft: #1f3d22;
+    --error: #f85149;
+    --error-soft: #3d1f22;
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'Manrope', -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-image: 
+      radial-gradient(circle at 20% 0%, rgba(75, 139, 190, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 100%, rgba(255, 212, 59, 0.05) 0%, transparent 50%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 540px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  /* Header */
+  .header {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .logo {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+  }
+
+  .logo .dot { color: var(--blue); }
+
+  .stats {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-dim);
+  }
+
+  .stat .icon { font-size: 14px; }
+  .stat .value { color: var(--text); }
+
+  .lives { display: flex; gap: 4px; }
+  .heart {
+    width: 16px;
+    height: 16px;
+    transition: all 0.3s;
+  }
+  .heart.lost { opacity: 0.18; transform: scale(0.85); }
+
+  /* Progress bar */
+  .progress-track {
+    height: 4px;
+    background: var(--border-soft);
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--blue));
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+
+  /* Content */
+  .content {
+    padding: 28px 22px;
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Menu */
+  .menu-title {
+    font-family: var(--serif);
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .menu-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .menu-subtitle {
+    color: var(--text-dim);
+    font-size: 15px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  .category-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .category-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .category-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    background: #1f262f;
+  }
+  .category-btn .cat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .category-btn .cat-info { flex: 1; }
+  .category-btn .cat-name { font-weight: 600; margin-bottom: 2px; }
+  .category-btn .cat-meta { font-size: 12px; color: var(--text-faint); font-family: var(--mono); }
+  .category-btn .arrow { color: var(--text-faint); }
+
+  .menu-footer {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-soft);
+    font-size: 12px;
+    color: var(--text-faint);
+    text-align: center;
+    line-height: 1.6;
+  }
+  .menu-footer kbd {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  /* Question */
+  .question-type {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-faint);
+    margin-bottom: 10px;
+  }
+
+  .question-text {
+    font-family: var(--serif);
+    font-size: 22px;
+    line-height: 1.35;
+    font-weight: 500;
+    margin-bottom: 18px;
+    letter-spacing: -0.01em;
+  }
+  .question-text code {
+    font-family: var(--mono);
+    font-size: 18px;
+    background: var(--bg);
+    padding: 2px 7px;
+    border-radius: 5px;
+    color: var(--accent);
+    border: 1px solid var(--border-soft);
+  }
+
+  .code-block {
+    background: var(--bg);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text);
+    margin-bottom: 18px;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .code-block .blank {
+    background: var(--accent);
+    color: var(--bg);
+    padding: 1px 10px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+  .code-block .comment { color: var(--text-faint); }
+  .code-block .keyword { color: #ff7b72; }
+  .code-block .string { color: #a5d6ff; }
+  .code-block .func { color: #d2a8ff; }
+
+  /* Multiple choice options */
+  .options {
+    display: grid;
+    gap: 10px;
+    margin-top: auto;
+  }
+  .option {
+    padding: 14px 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .option:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: #1f262f;
+  }
+  .option:disabled { cursor: default; }
+  .option.selected { border-color: var(--accent); background: #1f262f; }
+  .option.correct {
+    border-color: var(--success);
+    background: var(--success-soft);
+    color: var(--text);
+  }
+  .option.wrong {
+    border-color: var(--error);
+    background: var(--error-soft);
+    color: var(--text);
+  }
+  .option-letter {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .option.correct .option-letter { background: var(--success); border-color: var(--success); color: white; }
+  .option.wrong .option-letter { background: var(--error); border-color: var(--error); color: white; }
+
+  /* Fill-in input */
+  .fill-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--surface-2);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 16px;
+    outline: none;
+    transition: all 0.15s;
+    margin-bottom: 12px;
+  }
+  .fill-input:focus { border-color: var(--accent); }
+  .fill-input.correct { border-color: var(--success); background: var(--success-soft); }
+  .fill-input.wrong { border-color: var(--error); background: var(--error-soft); }
+  .fill-hint {
+    font-size: 12px;
+    color: var(--text-faint);
+    font-family: var(--mono);
+    margin-bottom: 16px;
+  }
+
+  /* Flashcard */
+  .flashcard-wrap {
+    perspective: 1000px;
+    margin-bottom: 16px;
+    flex: 1;
+    min-height: 200px;
+  }
+  .flashcard {
+    width: 100%;
+    height: 100%;
+    min-height: 200px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+  .flashcard.flipped { transform: rotateY(180deg); }
+  .flashcard-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .flashcard-back { transform: rotateY(180deg); }
+  .flashcard-front .label,
+  .flashcard-back .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-faint);
+    margin-bottom: 14px;
+  }
+  .flashcard-front .term {
+    font-family: var(--mono);
+    font-size: 18px;
+    color: var(--accent);
+    margin-bottom: 14px;
+    word-break: break-word;
+  }
+  .flashcard-front .hint {
+    font-size: 13px;
+    color: var(--text-faint);
+    font-style: italic;
+  }
+  .flashcard-back .explanation {
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--text);
+  }
+
+  .self-grade {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: auto;
+  }
+  .grade-btn {
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .grade-btn.knew:hover { border-color: var(--success); background: var(--success-soft); }
+  .grade-btn.didnt:hover { border-color: var(--error); background: var(--error-soft); }
+
+  /* Feedback */
+  .feedback {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    border-left: 3px solid;
+    animation: slideIn 0.3s ease;
+  }
+  .feedback.correct { background: var(--success-soft); border-color: var(--success); }
+  .feedback.wrong { background: var(--error-soft); border-color: var(--error); }
+  .feedback-title {
+    font-weight: 700;
+    margin-bottom: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .feedback.correct .feedback-title { color: var(--success); }
+  .feedback.wrong .feedback-title { color: var(--error); }
+  .feedback-text { color: var(--text); }
+  .feedback-text code {
+    font-family: var(--mono);
+    background: var(--bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  /* Action buttons */
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .btn {
+    flex: 1;
+    padding: 14px 18px;
+    border: none;
+    border-radius: 12px;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .btn-primary:hover { background: #ffdd5e; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text-dim); }
+
+  /* Game over */
+  .end-screen {
+    text-align: center;
+    padding: 20px 0;
+  }
+  .end-emoji { font-size: 48px; margin-bottom: 12px; }
+  .end-title {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .end-subtitle {
+    color: var(--text-dim);
+    margin-bottom: 24px;
+    font-size: 15px;
+  }
+  .end-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .end-stat {
+    padding: 14px 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .end-stat-value {
+    font-family: var(--serif);
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .end-stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-faint);
+    margin-top: 6px;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  .shake { animation: shake 0.4s; }
+
+  @media (max-width: 480px) {
+    body { padding: 0; }
+    .app { border-radius: 0; border-left: none; border-right: none; min-height: 100vh; }
+    .menu-title { font-size: 26px; }
+    .question-text { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app"></div>
+
+<script>
+// =========================================================
+// QUESTION BANK
+// =========================================================
+const QUESTIONS = [
+  // ---------- ZÁKLADY (numbers, strings, lists) ----------
+  {
+    type: 'mc', cat: 'zaklady',
+    q: 'Co vrátí výraz <code>17 // 3</code>?',
+    options: ['5', '5.666', '2', '17.3'],
+    answer: 0,
+    why: 'Operátor <code>//</code> je celočíselné dělení — zaokrouhluje dolů. Klasické dělení <code>/</code> by vrátilo 5.666.'
+  },
+  {
+    type: 'mc', cat: 'zaklady',
+    q: 'Co vrátí <code>17 % 3</code>?',
+    options: ['5', '2', '0', '5.666'],
+    answer: 1,
+    why: 'Operátor <code>%</code> je modulo — vrací zbytek po dělení. 17 = 5×3 + 2.'
+  },
+  {
+    type: 'mc', cat: 'zaklady',
+    q: 'Co vrátí <code>10 / 2</code>?',
+    options: ['5', '5.0', '"5"', 'chyba'],
+    answer: 1,
+    why: 'Operátor <code>/</code> v Pythonu 3 vždy vrací <code>float</code>, i když je výsledek celé číslo. Pro int použij <code>//</code>.'
+  },
+  {
+    type: 'mc', cat: 'zaklady',
+    q: 'Co je výstupem <code>"ha" * 3</code>?',
+    options: ['"hahaha"', '"ha ha ha"', 'chyba', '6'],
+    answer: 0,
+    why: 'Násobení stringu číslem ho opakuje. Stejně tak <code>[0] * 5</code> vytvoří list pěti nul.'
+  },
+  {
+    type: 'mc', cat: 'zaklady',
+    q: 'Jaký je první index v Pythonu?',
+    options: ['1', '0', '-1', 'záleží na typu'],
+    answer: 1,
+    why: 'Python počítá od nuly. <code>slovo[0]</code> je první znak, <code>slovo[-1]</code> poslední.'
+  },
+  {
+    type: 'mc', cat: 'zaklady',
+    q: 'Co vrátí <code>"Python"[2:]</code>?',
+    options: ['"Py"', '"thon"', '"yth"', '"thon."'],
+    answer: 1,
+    why: 'Slicing <code>[2:]</code> znamená "od indexu 2 do konce". P=0, y=1, t=2 → "thon".'
+  },
+  {
+    type: 'mc', cat: 'zaklady',
+    q: 'Co vrátí <code>len([1, 2, 3, 4, 5])</code>?',
+    options: ['4', '5', '15', '[1,2,3,4,5]'],
+    answer: 1,
+    why: '<code>len()</code> vrací počet prvků v listu (nebo délku stringu, počet klíčů v dictu, atd.).'
+  },
+  {
+    type: 'fill', cat: 'zaklady',
+    q: 'Doplň metodu, která rozdělí string na list podle čárky:',
+    code: '"jablko,hruska,svestka".___(",")',
+    answer: 'split',
+    accept: ['split'],
+    why: '<code>.split(",")</code> rozdělí string podle oddělovače. Opačná operace je <code>",".join(["a","b"])</code>.'
+  },
+  {
+    type: 'fill', cat: 'zaklady',
+    q: 'Doplň: jak přidáš prvek "merunka" na konec listu <code>ovoce</code>?',
+    code: 'ovoce.___("merunka")',
+    answer: 'append',
+    accept: ['append'],
+    why: '<code>.append()</code> přidá prvek na konec. Pro vložení na pozici <code>i</code> použij <code>.insert(i, hodnota)</code>.'
+  },
+  {
+    type: 'mc', cat: 'zaklady',
+    q: 'Jaký typ má <code>5 + 2.0</code>?',
+    options: ['int', 'float', 'string', 'chyba'],
+    answer: 1,
+    why: 'Sčítání int + float automaticky povýší výsledek na float. Python si typ zvolí sám.'
+  },
+  {
+    type: 'flash', cat: 'zaklady',
+    term: '"Hello".strip()',
+    explanation: 'Vrátí "Hello" — odstraní bílé znaky (mezery, taby, newline) z obou okrajů stringu. Ve skutečnosti zde odstraňovat není co — typicky bys to volal na <code>" Hello "</code>.'
+  },
+  {
+    type: 'flash', cat: 'zaklady',
+    term: '" ".join(["a", "b", "c"])',
+    explanation: 'Vrátí "a b c" — spojí prvky listu pomocí oddělovače. Pozor: oddělovač je řetězec, na kterém se metoda volá; argument je list.'
+  },
+
+  // ---------- ŘÍZENÍ TOKU (if, for, while) ----------
+  {
+    type: 'mc', cat: 'rizeni',
+    q: 'Které klíčové slovo NEexistuje v Pythonu?',
+    options: ['elif', 'else', 'elseif', 'if'],
+    answer: 2,
+    why: 'Python používá <code>elif</code> jako zkratku pro "else if". <code>elseif</code> je z PHP, <code>else if</code> z C/Java.'
+  },
+  {
+    type: 'mc', cat: 'rizeni',
+    q: 'Jak Python pozná, co patří do bloku <code>if</code>?',
+    options: ['Závorky { }', 'Klíčové slovo end', 'Odsazení', 'Středníky'],
+    answer: 2,
+    why: 'Python používá odsazení (4 mezery / Tab) místo závorek. Špatné odsazení = <code>IndentationError</code>.'
+  },
+  {
+    type: 'mc', cat: 'rizeni',
+    q: 'Co vrátí <code>list(range(1, 6))</code>?',
+    options: ['[1,2,3,4,5,6]', '[1,2,3,4,5]', '[0,1,2,3,4,5]', '[1,6]'],
+    answer: 1,
+    why: '<code>range(start, stop)</code> generuje čísla od start (včetně) do stop (BEZ stop). Klasický off-by-one trik.'
+  },
+  {
+    type: 'mc', cat: 'rizeni',
+    q: 'Co vrátí <code>list(range(0, 10, 2))</code>?',
+    options: ['[0,2,4,6,8,10]', '[0,2,4,6,8]', '[2,4,6,8]', '[0,1,2,...,10]'],
+    answer: 1,
+    why: 'Třetí argument je krok. Začni od 0, krokuj po 2, zastav před 10.'
+  },
+  {
+    type: 'fill', cat: 'rizeni',
+    q: 'Doplň operátor pro porovnání rovnosti:',
+    code: 'if x ___ 10:\n    print("rovná se")',
+    answer: '==',
+    accept: ['=='],
+    why: '<code>==</code> je porovnání, <code>=</code> je přiřazení. Záměna je nejčastější chyba začátečníků.'
+  },
+  {
+    type: 'fill', cat: 'rizeni',
+    q: 'Doplň klíčové slovo, které přeskočí zbytek iterace a jde na další:',
+    code: 'for c in cisla:\n    if c < 0:\n        ___\n    print(c)',
+    answer: 'continue',
+    accept: ['continue'],
+    why: '<code>continue</code> = přeskoč zbytek a pokračuj další iterací. <code>break</code> = úplně ukonči cyklus.'
+  },
+  {
+    type: 'mc', cat: 'rizeni',
+    q: 'Co dělá <code>break</code> v cyklu?',
+    options: [
+      'Přeskočí zbytek iterace',
+      'Okamžitě ukončí cyklus',
+      'Pauzne cyklus',
+      'Restartuje cyklus'
+    ],
+    answer: 1,
+    why: '<code>break</code> opustí cyklus úplně. <code>continue</code> jen přeskočí na další iteraci.'
+  },
+  {
+    type: 'mc', cat: 'rizeni',
+    q: 'Co je nebezpečí cyklu <code>while</code>?',
+    options: [
+      'Pomalý běh',
+      'Nekonečná smyčka, pokud se podmínka nikdy nestane false',
+      'Nemůže pracovat se stringy',
+      'Funguje jen s čísly'
+    ],
+    answer: 1,
+    why: 'Pokud zapomeneš měnit proměnnou v podmínce, program běží věčně. Přerušíš ho <kbd>Ctrl+C</kbd>.'
+  },
+  {
+    type: 'mc', cat: 'rizeni',
+    q: 'Co vypíše tento kód?<br><br><code>for i in range(3):<br>&nbsp;&nbsp;&nbsp;&nbsp;if i == 1: continue<br>&nbsp;&nbsp;&nbsp;&nbsp;print(i)</code>',
+    options: ['0 1 2', '0 2', '1', '0 1'],
+    answer: 1,
+    why: 'Při <code>i == 1</code> <code>continue</code> přeskočí print. Vypíše se 0 a 2.'
+  },
+  {
+    type: 'flash', cat: 'rizeni',
+    term: 'a, b = b, a + b',
+    explanation: 'Násobné přiřazení. Python nejdřív vypočítá pravou stranu (vznikne tuple), pak ji rozbalí do levých proměnných. Klasika z Fibonacciho.'
+  },
+
+  // ---------- FUNKCE ----------
+  {
+    type: 'mc', cat: 'funkce',
+    q: 'Které klíčové slovo definuje funkci?',
+    options: ['function', 'def', 'func', 'define'],
+    answer: 1,
+    why: '<code>def</code> = define. Třída se definuje pomocí <code>class</code>.'
+  },
+  {
+    type: 'fill', cat: 'funkce',
+    q: 'Doplň klíčové slovo, kterým funkce vrátí hodnotu:',
+    code: 'def secti(a, b):\n    ___ a + b',
+    answer: 'return',
+    accept: ['return'],
+    why: 'Bez <code>return</code> funkce vrátí <code>None</code>. <code>print()</code> jen vypíše — to není totéž jako vrátit.'
+  },
+  {
+    type: 'mc', cat: 'funkce',
+    q: 'Co je default argument?',
+    options: [
+      'Argument, který se musí vždy zadat',
+      'Argument s předem nastavenou hodnotou, která se použije, pokud ho nezadáš',
+      'První argument funkce',
+      'Speciální typ proměnné'
+    ],
+    answer: 1,
+    why: 'Např. <code>def f(x, sazba=0.21):</code> — pokud sazbu nezadáš, použije se 0.21. Default args musí být až za normálními.'
+  },
+  {
+    type: 'mc', cat: 'funkce',
+    q: 'Co vrátí funkce, která nemá <code>return</code>?',
+    options: ['0', '""', 'None', 'chyba'],
+    answer: 2,
+    why: '<code>None</code> je Python "nic". Funkce bez return vždy vrací <code>None</code>, i když uvnitř něco vypisuje.'
+  },
+  {
+    type: 'mc', cat: 'funkce',
+    q: 'Co je docstring?',
+    options: [
+      'String s daty pro dokumentaci',
+      'Komentář v hlavičce funkce ve trojitých uvozovkách, popisující co funkce dělá',
+      'Speciální typ stringu s diakritikou',
+      'Soubor s dokumentací'
+    ],
+    answer: 1,
+    why: 'První řádek funkce/třídy v <code>"""trojitých uvozovkách"""</code>. IDE ho ukáže při hoveru.'
+  },
+  {
+    type: 'fill', cat: 'funkce',
+    q: 'Doplň volání funkce <code>pozdrav</code> s argumentem "Petra":',
+    code: 'def pozdrav(jmeno):\n    print(f"Ahoj, {jmeno}!")\n\n___("Petra")',
+    answer: 'pozdrav',
+    accept: ['pozdrav'],
+    why: 'Funkce se volá pomocí <code>jmeno_funkce(argumenty)</code>. Závorky jsou povinné, i když je funkce bez argumentů.'
+  },
+  {
+    type: 'flash', cat: 'funkce',
+    term: 'def f(x: int) -> str:',
+    explanation: 'Type hints: <code>x: int</code> říká, že x by měl být int. <code>-> str</code> říká, že funkce vrací string. Python to nevynucuje, ale IDE a mypy podle toho kontrolují kód.'
+  },
+  {
+    type: 'flash', cat: 'funkce',
+    term: 'def f(*args, **kwargs):',
+    explanation: '<code>*args</code> nasbírá libovolný počet pozičních argumentů do tuple. <code>**kwargs</code> nasbírá pojmenované argumenty do dictu. Časté u dekorátorů a wrapper funkcí.'
+  },
+
+  // ---------- SLOVNÍKY & F-STRINGY ----------
+  {
+    type: 'mc', cat: 'dict',
+    q: 'Jak vypadá literál slovníku v Pythonu?',
+    options: [
+      '[klíč: hodnota, klíč: hodnota]',
+      '{klíč: hodnota, klíč: hodnota}',
+      '(klíč = hodnota, klíč = hodnota)',
+      '<klíč: hodnota>'
+    ],
+    answer: 1,
+    why: 'Slovník = složené závorky <code>{}</code>, klíč a hodnota oddělené dvojtečkou. Pozor: <code>{}</code> je prázdný dict, ne set.'
+  },
+  {
+    type: 'mc', cat: 'dict',
+    q: 'Jak získáš hodnotu pod klíčem "Tech" ze slovníku <code>tickers</code>?',
+    options: [
+      'tickers.Tech',
+      'tickers("Tech")',
+      'tickers["Tech"]',
+      'tickers->Tech'
+    ],
+    answer: 2,
+    why: 'Slovník přistupuje hranatými závorkami. Tečková notace funguje u objektů, ne u dictů.'
+  },
+  {
+    type: 'mc', cat: 'dict',
+    q: 'Co vrátí <code>dict.items()</code>?',
+    options: [
+      'Jen klíče',
+      'Jen hodnoty',
+      'Páry (klíč, hodnota)',
+      'Počet prvků'
+    ],
+    answer: 2,
+    why: 'Pro procházení obojího: <code>for k, v in dict.items():</code>. Pro jen klíče <code>.keys()</code>, jen hodnoty <code>.values()</code>.'
+  },
+  {
+    type: 'mc', cat: 'dict',
+    q: 'Co je f-string?',
+    options: [
+      'Speciální typ čísla',
+      'String, do kterého se vkládají proměnné pomocí {}',
+      'String s formátováním data',
+      'String pro souborové cesty'
+    ],
+    answer: 1,
+    why: 'f-string = písmeno <code>f</code> před uvozovkami: <code>f"Ahoj {jmeno}"</code>. Vkládá hodnoty proměnných přímo do textu.'
+  },
+  {
+    type: 'fill', cat: 'dict',
+    q: 'Doplň písmeno, které ze stringu udělá f-string:',
+    code: 'jmeno = "Anna"\nprint(___"Ahoj {jmeno}")',
+    answer: 'f',
+    accept: ['f'],
+    why: 'Bez <code>f</code> by se vytisklo doslova "Ahoj {jmeno}". Velké <code>F"..."</code> funguje taky.'
+  },
+  {
+    type: 'mc', cat: 'dict',
+    q: 'Co udělá <code>f"{cena:.2f}"</code> pokud <code>cena = 1234.5</code>?',
+    options: [
+      '"1234.5"',
+      '"1234.50"',
+      '"1234.500000"',
+      'chyba'
+    ],
+    answer: 1,
+    why: '<code>:.2f</code> = formátuj jako float se 2 desetinnými místy. Užitečné pro měny, procenta, atd.'
+  },
+  {
+    type: 'flash', cat: 'dict',
+    term: 'tickers.get("Tech", [])',
+    explanation: 'Bezpečný přístup ke slovníku. Pokud klíč "Tech" neexistuje, vrátí defaultní hodnotu <code>[]</code> místo <code>KeyError</code>. Mnohem bezpečnější než <code>tickers["Tech"]</code>.'
+  },
+
+  // ---------- PANDAS ZÁKLADY ----------
+  {
+    type: 'mc', cat: 'pandas',
+    q: 'Co dělá <code>df.head()</code>?',
+    options: [
+      'Vrátí název DataFramu',
+      'Vrátí prvních 5 řádků',
+      'Vrátí posledních 5 řádků',
+      'Vrátí sloupce'
+    ],
+    answer: 1,
+    why: '<code>.head()</code> = první řádky (default 5), <code>.tail()</code> = poslední. Užitečné pro rychlou kontrolu dat.'
+  },
+  {
+    type: 'mc', cat: 'pandas',
+    q: 'Co vrátí <code>df.shape</code>?',
+    options: [
+      'Tvar grafu',
+      'Tuple (počet řádků, počet sloupců)',
+      'Velikost souboru',
+      'Datové typy'
+    ],
+    answer: 1,
+    why: 'Např. <code>(1500, 6)</code> = 1500 řádků, 6 sloupců. Bez závorek — není to metoda, ale atribut.'
+  },
+  {
+    type: 'mc', cat: 'pandas',
+    q: 'Jak v Excelu vytvoříš pivot, totéž v pandas dělá:',
+    options: [
+      'df.merge()',
+      'df.groupby()',
+      'df.pivot_table()',
+      'df.transpose()'
+    ],
+    answer: 2,
+    why: '<code>pivot_table(index=, columns=, values=, aggfunc=)</code> dělá přesně to, co Excel pivot. <code>groupby</code> je pro 1D agregaci.'
+  },
+  {
+    type: 'fill', cat: 'pandas',
+    q: 'Doplň metodu pro načtení parquet souboru:',
+    code: 'df = pd.___("data/eurusd.parquet")',
+    answer: 'read_parquet',
+    accept: ['read_parquet'],
+    why: 'Pandas má rodinu <code>read_*</code> funkcí: <code>read_csv</code>, <code>read_parquet</code>, <code>read_excel</code>, <code>read_sql</code>...'
+  },
+  {
+    type: 'mc', cat: 'pandas',
+    q: 'Co dělá <code>df.dtypes</code>?',
+    options: [
+      'Vrátí počet řádků',
+      'Vrátí datové typy sloupců',
+      'Změní typ sloupce',
+      'Vrátí seznam sloupců'
+    ],
+    answer: 1,
+    why: 'Užitečné pro kontrolu, jestli pandas správně načetl typy. Často zjistíš, že čísla jsou stringy a musíš je převést přes <code>.astype("float")</code>.'
+  },
+  {
+    type: 'flash', cat: 'pandas',
+    term: 'df["Year"] = df["ExitTime"].dt.year',
+    explanation: '<code>.dt</code> accessor funguje na datetime sloupci a umožňuje vytahovat části data: <code>.year</code>, <code>.month</code>, <code>.day</code>, <code>.hour</code>, <code>.dayofweek</code>...'
+  },
+  {
+    type: 'flash', cat: 'pandas',
+    term: 'df.pivot_table(index="Year", columns="Month", values="PnL", aggfunc="sum")',
+    explanation: 'Překlopí dlouhá data na široká: roky jako řádky, měsíce jako sloupce, sečtený PnL jako hodnota. Stejné jako Excel kontingenční tabulka.'
+  },
+
+  // ---------- SOUBORY & I/O ----------
+  {
+    type: 'mc', cat: 'io',
+    q: 'Co dělá <code>os.makedirs("data/Tech", exist_ok=True)</code>?',
+    options: [
+      'Vytvoří DataFrame',
+      'Vytvoří složku (a všechny chybějící mezilehlé)',
+      'Načte timeseries',
+      'Smaže složku'
+    ],
+    answer: 1,
+    why: '<code>makedirs</code> = make directories (s "s" — vytvoří i parent složky). <code>exist_ok=True</code> znamená "pokud existuje, nespadni".'
+  },
+  {
+    type: 'mc', cat: 'io',
+    q: 'K čemu je <code>exist_ok=True</code>?',
+    options: [
+      'Vytvoří složku rychleji',
+      'Pokud složka existuje, nevyhodí chybu',
+      'Smaže složku, pokud existuje',
+      'Vyžaduje, aby složka existovala'
+    ],
+    answer: 1,
+    why: 'Klíčové pro idempotentní skripty — můžeš spustit vícekrát bez pádu. Bez něj <code>FileExistsError</code>.'
+  },
+  {
+    type: 'mc', cat: 'io',
+    q: 'Co vrátí <code>os.path.exists("data/foo.csv")</code>?',
+    options: [
+      'Obsah souboru',
+      'True nebo False',
+      'Cestu k souboru',
+      'Velikost souboru'
+    ],
+    answer: 1,
+    why: 'Boolean. Klasické použití: <code>if not os.path.exists(path): download(...)</code>.'
+  },
+  {
+    type: 'fill', cat: 'io',
+    q: 'Doplň funkci, která načte JSON odpověď z requestu:',
+    code: 'r = requests.get(url)\ndata = r.___()',
+    answer: 'json',
+    accept: ['json'],
+    why: '<code>r.json()</code> rovnou parsuje JSON odpověď do Python dictu. Alternativa: <code>r.text</code> (jako string) nebo <code>r.content</code> (bytes).'
+  },
+  {
+    type: 'mc', cat: 'io',
+    q: 'Proč se používá <code>time.sleep(13)</code> mezi API voláními?',
+    options: [
+      'Aby kód lépe vypadal',
+      'Rate limiting — aby API nezablokovalo náš klíč',
+      'Aby data byla čerstvější',
+      'Pro debugging'
+    ],
+    answer: 1,
+    why: 'Mnoho free API má limit (např. Alpha Vantage: 5 volání/minuta). Pauza mezi voláními zabrání zablokování.'
+  },
+  {
+    type: 'mc', cat: 'io',
+    q: 'Kam patří API klíče?',
+    options: [
+      'Přímo do kódu jako string',
+      'Do souboru .env (a .env do .gitignore)',
+      'Do README.md',
+      'Do názvu souboru'
+    ],
+    answer: 1,
+    why: 'Nikdy do gitu. <code>.env</code> + <code>load_dotenv()</code> + <code>os.getenv("KEY")</code>. Jinak ti klíč scrapnou boti během hodin.'
+  },
+  {
+    type: 'flash', cat: 'io',
+    term: 'try / except Exception as e',
+    explanation: 'Odchytává chyby. Použij pro operace, kde může selhat něco mimo tvou kontrolu (API, disk, parsování). NE pro chyby v tvém kódu — ty chceš vidět spadnout.'
+  },
+  {
+    type: 'flash', cat: 'io',
+    term: 'with open("file.txt") as f:',
+    explanation: 'Context manager. Soubor se automaticky zavře na konci bloku, i když dojde k chybě. Vždy preferuj <code>with</code> před manuálním <code>open()/close()</code>.'
+  },
+
+  // Pár navíc — list comprehension protože je to mocný koncept
+  {
+    type: 'mc', cat: 'rizeni',
+    q: 'Co vyrobí <code>[x**2 for x in range(1, 4)]</code>?',
+    options: ['[1, 4, 9]', '[1, 2, 3]', '[2, 4, 8]', '[1, 4, 9, 16]'],
+    answer: 0,
+    why: 'List comprehension. <code>range(1,4)</code> = 1,2,3. Druhé mocniny: 1, 4, 9.'
+  },
+  {
+    type: 'mc', cat: 'rizeni',
+    q: 'Co dělá <code>[x for x in range(10) if x % 2 == 0]</code>?',
+    options: [
+      'Sečte sudá čísla',
+      'Vyrobí list sudých čísel od 0 do 9',
+      'Spočítá lichá čísla',
+      'Spadne na chybu'
+    ],
+    answer: 1,
+    why: 'List comprehension s podmínkou. Výsledek: <code>[0, 2, 4, 6, 8]</code>.'
+  },
+];
+
+// =========================================================
+// CATEGORY METADATA
+// =========================================================
+const CATEGORIES = {
+  zaklady:  { name: 'Základy',          desc: 'čísla · stringy · listy',          icon: 'a' },
+  rizeni:   { name: 'Řízení toku',      desc: 'if · for · while · range',          icon: 'b' },
+  funkce:   { name: 'Funkce',           desc: 'def · return · args',               icon: 'c' },
+  dict:     { name: 'Slovníky a f-stringy', desc: 'dict · {} · f"..."',           icon: 'd' },
+  pandas:   { name: 'Pandas základy',   desc: 'DataFrame · pivot · dt',            icon: 'e' },
+  io:       { name: 'Soubory a I/O',    desc: 'os · requests · try/except',        icon: 'f' },
+};
+
+// =========================================================
+// STATE & RENDER
+// =========================================================
+const QUESTIONS_PER_SESSION = 10;
+let state;
+
+function initState() {
+  state = {
+    screen: 'menu',
+    category: null,
+    deck: [],
+    index: 0,
+    score: 0,
+    streak: 0,
+    bestStreak: 0,
+    lives: 3,
+    answered: false,
+    correct: null,
+    selectedOption: null,
+    flashFlipped: false,
+    typedAnswer: '',
+  };
+}
+initState();
+
+const app = document.getElementById('app');
+
+function render() {
+  if (state.screen === 'menu') renderMenu();
+  else if (state.screen === 'question') renderQuestion();
+  else if (state.screen === 'end') renderEnd();
+}
+
+function heartSVG(filled) {
+  return `<svg class="heart ${filled ? '' : 'lost'}" viewBox="0 0 24 24" fill="${filled ? '#f85149' : '#7d8590'}" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 21s-7-4.5-9.5-9C.5 7 4 3 8 3c2 0 3.5 1 4 2.5C12.5 4 14 3 16 3c4 0 7.5 4 5.5 9-2.5 4.5-9.5 9-9.5 9z"/>
+  </svg>`;
+}
+
+function renderHeader() {
+  const livesHtml = Array.from({length: 3}, (_, i) => heartSVG(i < state.lives)).join('');
+  return `
+    <div class="header">
+      <div class="logo">PyDrill<span class="dot">.</span></div>
+      <div class="stats">
+        <div class="stat" title="Skóre"><span class="icon">⚡</span><span class="value">${state.score}</span></div>
+        <div class="stat" title="Streak"><span class="icon">🔥</span><span class="value">${state.streak}</span></div>
+        <div class="lives" title="Životy">${livesHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderProgress() {
+  if (state.screen !== 'question') return '';
+  const pct = (state.index / state.deck.length) * 100;
+  return `<div class="progress-track"><div class="progress-fill" style="width: ${pct}%"></div></div>`;
+}
+
+// ---------- MENU ----------
+function renderMenu() {
+  const catCount = (cat) => QUESTIONS.filter(q => q.cat === cat).length;
+  const totalCount = QUESTIONS.length;
+
+  app.innerHTML = `
+    ${renderHeader()}
+    <div class="content">
+      <h1 class="menu-title">Trénuj <em>Python</em>.<br>Krátce, často, prakticky.</h1>
+      <p class="menu-subtitle">Vyber kategorii. Každá lekce má 10 úloh — výběr z možností, doplnění syntaxe a kartičky.</p>
+      <div class="category-list">
+        <button class="category-btn" data-cat="all">
+          <div class="cat-icon">★</div>
+          <div class="cat-info">
+            <div class="cat-name">Vše dohromady</div>
+            <div class="cat-meta">${totalCount} úloh · náhodný výběr</div>
+          </div>
+          <div class="arrow">→</div>
+        </button>
+        ${Object.entries(CATEGORIES).map(([key, c]) => `
+          <button class="category-btn" data-cat="${key}">
+            <div class="cat-icon">${c.icon}</div>
+            <div class="cat-info">
+              <div class="cat-name">${c.name}</div>
+              <div class="cat-meta">${c.desc} · ${catCount(key)} úloh</div>
+            </div>
+            <div class="arrow">→</div>
+          </button>
+        `).join('')}
+      </div>
+      <div class="menu-footer">
+        Tři životy. Špatná odpověď = -1 srdíčko. Streak ti dá bonus.<br>
+        Zkratka: <kbd>1</kbd>–<kbd>4</kbd> pro výběr · <kbd>Enter</kbd> pro pokračování
+      </div>
+    </div>
+  `;
+  app.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', () => startSession(btn.dataset.cat));
+  });
+}
+
+// ---------- START SESSION ----------
+function startSession(cat) {
+  const pool = cat === 'all'
+    ? [...QUESTIONS]
+    : QUESTIONS.filter(q => q.cat === cat);
+
+  // Shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  state.deck = pool.slice(0, Math.min(QUESTIONS_PER_SESSION, pool.length));
+  state.index = 0;
+  state.score = 0;
+  state.streak = 0;
+  state.bestStreak = 0;
+  state.lives = 3;
+  state.category = cat;
+  state.screen = 'question';
+  resetQuestionState();
+  render();
+}
+
+function resetQuestionState() {
+  state.answered = false;
+  state.correct = null;
+  state.selectedOption = null;
+  state.flashFlipped = false;
+  state.typedAnswer = '';
+}
+
+// ---------- QUESTION ROUTER ----------
+function renderQuestion() {
+  const q = state.deck[state.index];
+  const typeLabels = { mc: 'Výběr z možností', fill: 'Doplň kód', flash: 'Kartička' };
+
+  let body = '';
+  if (q.type === 'mc') body = renderMC(q);
+  else if (q.type === 'fill') body = renderFill(q);
+  else if (q.type === 'flash') body = renderFlash(q);
+
+  app.innerHTML = `
+    ${renderHeader()}
+    ${renderProgress()}
+    <div class="content">
+      <div class="question-type">${typeLabels[q.type]} · ${state.index + 1}/${state.deck.length}</div>
+      ${body}
+    </div>
+  `;
+
+  attachQuestionHandlers(q);
+}
+
+// ---------- MULTIPLE CHOICE ----------
+function renderMC(q) {
+  const letters = ['A', 'B', 'C', 'D'];
+  const optionsHtml = q.options.map((opt, i) => {
+    let cls = 'option';
+    if (state.answered) {
+      if (i === q.answer) cls += ' correct';
+      else if (i === state.selectedOption) cls += ' wrong';
+    } else if (i === state.selectedOption) {
+      cls += ' selected';
+    }
+    return `
+      <button class="${cls}" data-idx="${i}" ${state.answered ? 'disabled' : ''}>
+        <div class="option-letter">${letters[i]}</div>
+        <div>${opt}</div>
+      </button>
+    `;
+  }).join('');
+
+  return `
+    <div class="question-text">${q.q}</div>
+    <div class="options" id="options">${optionsHtml}</div>
+    ${renderFeedback(q)}
+    ${renderActions()}
+  `;
+}
+
+// ---------- FILL IN BLANK ----------
+function renderFill(q) {
+  const codeHtml = highlightCode(q.code).replace('___', '<span class="blank">___</span>');
+  let inputCls = 'fill-input';
+  if (state.answered) inputCls += state.correct ? ' correct' : ' wrong';
+
+  return `
+    <div class="question-text">${q.q}</div>
+    <pre class="code-block">${codeHtml}</pre>
+    <input type="text" class="${inputCls}" id="fillInput"
+      placeholder="napiš co patří místo ___"
+      value="${escapeHtml(state.typedAnswer)}"
+      ${state.answered ? 'disabled' : ''}
+      autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+    <div class="fill-hint">stiskni Enter pro odeslání</div>
+    ${renderFeedback(q)}
+    ${renderActions()}
+  `;
+}
+
+// ---------- FLASHCARD ----------
+function renderFlash(q) {
+  return `
+    <div class="question-text">Co znamená / co dělá tento výraz?</div>
+    <div class="flashcard-wrap">
+      <div class="flashcard ${state.flashFlipped ? 'flipped' : ''}" id="flashcard">
+        <div class="flashcard-face flashcard-front">
+          <div class="label">Termín</div>
+          <div class="term">${escapeHtml(q.term)}</div>
+          <div class="hint">klikni pro otočení</div>
+        </div>
+        <div class="flashcard-face flashcard-back">
+          <div class="label">Vysvětlení</div>
+          <div class="explanation">${q.explanation}</div>
+        </div>
+      </div>
+    </div>
+    ${state.flashFlipped && !state.answered ? `
+      <div class="self-grade">
+        <button class="grade-btn didnt" data-grade="0">Nevěděl jsem</button>
+        <button class="grade-btn knew" data-grade="1">Věděl jsem</button>
+      </div>
+    ` : ''}
+    ${state.answered ? renderActions() : ''}
+  `;
+}
+
+// ---------- FEEDBACK & ACTIONS ----------
+function renderFeedback(q) {
+  if (!state.answered) return '';
+  return `
+    <div class="feedback ${state.correct ? 'correct' : 'wrong'}">
+      <div class="feedback-title">${state.correct ? '✓ Správně' : '✗ Špatně'}</div>
+      <div class="feedback-text">${q.why || ''}</div>
+    </div>
+  `;
+}
+
+function renderActions() {
+  if (!state.answered) {
+    if (state.deck[state.index].type === 'fill') {
+      return `<div class="actions"><button class="btn btn-primary" id="submitBtn">Zkontrolovat</button></div>`;
+    }
+    if (state.deck[state.index].type === 'mc' && state.selectedOption !== null) {
+      return `<div class="actions"><button class="btn btn-primary" id="submitBtn">Zkontrolovat</button></div>`;
+    }
+    return '';
+  }
+  const isLast = state.index === state.deck.length - 1;
+  return `
+    <div class="actions">
+      <button class="btn btn-ghost" id="quitBtn">Konec</button>
+      <button class="btn btn-primary" id="nextBtn">${isLast ? 'Dokončit' : 'Další →'}</button>
+    </div>
+  `;
+}
+
+// ---------- HANDLERS ----------
+function attachQuestionHandlers(q) {
+  if (q.type === 'mc') {
+    app.querySelectorAll('.option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (state.answered) return;
+        state.selectedOption = parseInt(btn.dataset.idx);
+        render();
+      });
+    });
+  }
+
+  if (q.type === 'fill') {
+    const input = document.getElementById('fillInput');
+    if (input && !state.answered) {
+      input.focus();
+      // place cursor at end
+      input.setSelectionRange(input.value.length, input.value.length);
+      input.addEventListener('input', (e) => { state.typedAnswer = e.target.value; });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          submitFill(q);
+        }
+      });
+    }
+  }
+
+  if (q.type === 'flash') {
+    const card = document.getElementById('flashcard');
+    if (card && !state.answered) {
+      card.addEventListener('click', () => {
+        state.flashFlipped = true;
+        render();
+      });
+    }
+    app.querySelectorAll('.grade-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const knew = btn.dataset.grade === '1';
+        gradeAnswer(knew, q);
+      });
+    });
+  }
+
+  const submitBtn = document.getElementById('submitBtn');
+  if (submitBtn) {
+    submitBtn.addEventListener('click', () => {
+      if (q.type === 'mc') submitMC(q);
+      else if (q.type === 'fill') submitFill(q);
+    });
+  }
+
+  const nextBtn = document.getElementById('nextBtn');
+  if (nextBtn) nextBtn.addEventListener('click', nextQuestion);
+
+  const quitBtn = document.getElementById('quitBtn');
+  if (quitBtn) quitBtn.addEventListener('click', endSession);
+}
+
+function submitMC(q) {
+  if (state.selectedOption === null) return;
+  const correct = state.selectedOption === q.answer;
+  gradeAnswer(correct, q);
+}
+
+function submitFill(q) {
+  const typed = (state.typedAnswer || '').trim().toLowerCase();
+  if (!typed) return;
+  const accepted = (q.accept || [q.answer]).map(s => s.toLowerCase());
+  const correct = accepted.includes(typed);
+  gradeAnswer(correct, q);
+}
+
+function gradeAnswer(correct, q) {
+  state.answered = true;
+  state.correct = correct;
+  if (correct) {
+    const bonus = state.streak * 2;
+    state.score += 10 + bonus;
+    state.streak += 1;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+  } else {
+    state.streak = 0;
+    state.lives -= 1;
+    if (state.lives <= 0) {
+      render();
+      setTimeout(() => endSession(), 1200);
+      return;
+    }
+    // shake animation
+    setTimeout(() => {
+      const content = document.querySelector('.content');
+      if (content) {
+        content.classList.add('shake');
+        setTimeout(() => content.classList.remove('shake'), 400);
+      }
+    }, 50);
+  }
+  render();
+}
+
+function nextQuestion() {
+  if (state.index >= state.deck.length - 1) {
+    endSession();
+    return;
+  }
+  state.index += 1;
+  resetQuestionState();
+  render();
+}
+
+function endSession() {
+  state.screen = 'end';
+  render();
+}
+
+// ---------- END SCREEN ----------
+function renderEnd() {
+  const total = state.deck.length;
+  const answered = state.lives > 0 ? state.index + 1 : state.index;
+  const accuracy = answered > 0 ? Math.round((state.score / (answered * 10)) * 10) / 10 : 0;
+
+  let title, subtitle, emoji;
+  if (state.lives <= 0) {
+    emoji = '💔';
+    title = 'Hra skončila';
+    subtitle = `Došla srdíčka. Stalo se to po ${state.index + 1}. otázce.`;
+  } else if (state.score > 100) {
+    emoji = '🎯';
+    title = 'Skvělá práce!';
+    subtitle = 'Tohle bylo ostré.';
+  } else {
+    emoji = '✨';
+    title = 'Hotovo';
+    subtitle = 'Procvičeno. Vrať se za chvíli na další kolo.';
+  }
+
+  app.innerHTML = `
+    ${renderHeader()}
+    <div class="content">
+      <div class="end-screen">
+        <div class="end-emoji">${emoji}</div>
+        <div class="end-title">${title}</div>
+        <div class="end-subtitle">${subtitle}</div>
+        <div class="end-stats">
+          <div class="end-stat">
+            <div class="end-stat-value">${state.score}</div>
+            <div class="end-stat-label">Skóre</div>
+          </div>
+          <div class="end-stat">
+            <div class="end-stat-value">${state.bestStreak}</div>
+            <div class="end-stat-label">Streak</div>
+          </div>
+          <div class="end-stat">
+            <div class="end-stat-value">${state.lives}/3</div>
+            <div class="end-stat-label">Životy</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-ghost" id="menuBtn">Zpět na menu</button>
+          <button class="btn btn-primary" id="againBtn">Znovu</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('menuBtn').addEventListener('click', () => {
+    initState();
+    render();
+  });
+  document.getElementById('againBtn').addEventListener('click', () => {
+    startSession(state.category);
+  });
+}
+
+// ---------- HELPERS ----------
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function highlightCode(code) {
+  // Naive but pretty-enough Python highlighter for code blocks
+  const escaped = escapeHtml(code);
+  const keywords = ['def','return','if','elif','else','for','while','in','not','and','or','True','False','None','import','from','as','try','except','class','with','break','continue','print'];
+  let out = escaped;
+  // strings
+  out = out.replace(/("[^"]*"|'[^']*')/g, '<span class="string">$1</span>');
+  // comments
+  out = out.replace(/(#[^\n]*)/g, '<span class="comment">$1</span>');
+  // keywords (use word boundary)
+  keywords.forEach(kw => {
+    const re = new RegExp(`\\b(${kw})\\b`, 'g');
+    out = out.replace(re, '<span class="keyword">$1</span>');
+  });
+  return out;
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (state.screen !== 'question') return;
+  const q = state.deck[state.index];
+
+  if (state.answered && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    nextQuestion();
+    return;
+  }
+
+  if (q.type === 'mc' && !state.answered) {
+    const idx = ['1','2','3','4'].indexOf(e.key);
+    if (idx !== -1 && idx < q.options.length) {
+      state.selectedOption = idx;
+      render();
+    } else if (e.key === 'Enter' && state.selectedOption !== null) {
+      submitMC(q);
+    }
+  }
+});
+
+// Boot
+render();
+</script>
+
+</body>
+</html>

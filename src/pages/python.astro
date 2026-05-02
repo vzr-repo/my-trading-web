@@ -1,0 +1,33 @@
+---
+import Base from "@/layouts/Base.astro";
+---
+
+<Base
+  title="PyDrill — učím se Python"
+  meta_title="PyDrill — Interactive Python Learning Game"
+  description="PyDrill — interactive game for learning Python"
+>
+  <div class="game-wrapper">
+    <iframe
+      src="/python-game.html"
+      title="PyDrill — interactive game for learning Python"
+      width="100%"
+      frameborder="0"
+      transition:animate="none"
+    ></iframe>
+  </div>
+</Base>
+
+<style>
+  .game-wrapper {
+    width: 100%;
+  }
+
+  .game-wrapper iframe {
+    display: block;
+    width: 100%;
+    height: calc(100vh - 80px);
+    min-height: 600px;
+    border: none;
+  }
+</style>
