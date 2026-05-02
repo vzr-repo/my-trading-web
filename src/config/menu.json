@@ -13,6 +13,17 @@
       "url": "/dashboard"
     },
     {
+      "name": "Games",
+      "url": "/python",
+      "hasChildren": true,
+      "children": [
+        {
+          "name": "PyDrill — Python",
+          "url": "/python"
+        }
+      ]
+    },
+    {
       "name": "Blog",
       "url": "/blog"
     }
@@ -25,6 +36,10 @@
     {
       "name": "Dashboard",
       "url": "/dashboard"
+    },
+    {
+      "name": "PyDrill — Python",
+      "url": "/python"
     }
   ]
 }
