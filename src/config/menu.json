@@ -10,7 +10,14 @@
     },
     {
       "name": "Dashboard",
-      "url": "/dashboard"
+      "url": "/dashboard",
+      "hasChildren": true,
+      "children": [
+        {
+          "name": "Trading Dashboard",
+          "url": "/dashboard"
+        }
+      ]
     },
     {
       "name": "Games",
