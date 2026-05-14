@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Engineering Quest — Czech Company Research</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Inter+Tight:wght@400;500;700;900&display=swap');
+
+        :root {
+            --bg-deep:    #0a0f1a;
+            --bg-card:    #131b2c;
+            --bg-elevated: #1a2438;
+            --accent:     #f59e0b;
+            --accent-dim: #b8770b;
+            --success:    #10b981;
+            --error:      #ef4444;
+            --text:       #e8eef7;
+            --text-dim:   #8b97ad;
+            --text-faint: #4a5469;
+            --border:     #243349;
+            --grid-line:  rgba(245, 158, 11, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            background: var(--bg-deep);
+            color: var(--text);
+            font-family: 'Inter Tight', sans-serif;
+            min-height: 100vh;
+            position: relative;
+            background-image:
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 64px 64px;
+            background-position: -1px -1px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(245, 158, 11, 0.08), transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(16, 185, 129, 0.06), transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        ::selection {
+            background: var(--accent);
+            color: var(--bg-deep);
+        }
+
+        /* === CONTAINER === */
+        .stage {
+            position: relative;
+            z-index: 1;
+            max-width: 920px;
+            margin: 0 auto;
+            padding: 32px 24px 64px;
+        }
+
+        /* === HEADER === */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--accent);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            line-height: 1;
+        }
+
+        .subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 4px;
+            letter-spacing: 0.05em;
+        }
+
+        .stats {
+            display: flex;
+            gap: 16px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            color: var(--text-faint);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+            line-height: 1;
+            margin-top: 4px;
+        }
+
+        .stat.hp .stat-value { color: var(--success); }
+        .stat.lvl .stat-value { color: var(--accent); }
+
+        /* === PROGRESS === */
+        .progress-shell {
+            margin-bottom: 32px;
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .progress-track {
+            height: 6px;
+            background: var(--bg-elevated);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            position: absolute;
+            inset: 0 100% 0 0;
+            background: linear-gradient(90deg, var(--accent), var(--accent-dim));
+            transition: right 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 20px var(--accent);
+        }
+
+        /* === CARD === */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 36px 32px;
+            position: relative;
+            min-height: 420px;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 24px;
+            width: 60px;
+            height: 1px;
+            background: var(--accent);
+        }
+
+        .question-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--accent);
+            letter-spacing: 0.2em;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .difficulty {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            padding: 3px 8px;
+            border: 1px solid;
+            border-radius: 3px;
+            margin-left: 12px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            vertical-align: middle;
+        }
+        .difficulty.easy { color: var(--success); border-color: var(--success); }
+        .difficulty.medium { color: var(--accent); border-color: var(--accent); }
+        .difficulty.hard { color: var(--error); border-color: var(--error); }
+
+        .question {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+
+        .question code {
+            background: var(--bg-elevated);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            border: 1px solid var(--border);
+        }
+
+        .context {
+            color: var(--text-dim);
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            padding-left: 16px;
+            border-left: 2px solid var(--border);
+        }
+
+        .context code {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-elevated);
+            padding: 1px 6px;
+            border-radius: 2px;
+            color: var(--accent);
+            font-size: 0.9em;
+        }
+
+        .code-block {
+            background: var(--bg-deep);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 16px 20px;
+            margin: 16px 0 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text);
+            overflow-x: auto;
+            position: relative;
+        }
+        .code-block::before {
+            content: attr(data-lang);
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            font-size: 9px;
+            color: var(--text-faint);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+        .code-block .kw { color: #c084fc; }
+        .code-block .str { color: #86efac; }
+        .code-block .num { color: var(--accent); }
+        .code-block .com { color: var(--text-faint); font-style: italic; }
+        .code-block .fn { color: #93c5fd; }
+
+        /* === ANSWERS === */
+        .answers {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .answer {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 20px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: left;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text);
+            font-weight: 500;
+            line-height: 1.4;
+            width: 100%;
+        }
+
+        .answer:hover:not(:disabled) {
+            border-color: var(--accent);
+            transform: translateX(4px);
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .answer:disabled { cursor: default; }
+
+        .answer-mark {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dim);
+            flex-shrink: 0;
+            transition: all 0.15s;
+        }
+
+        .answer:hover:not(:disabled) .answer-mark {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .answer.correct {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.08);
+            animation: pulse-correct 0.5s;
+        }
+        .answer.correct .answer-mark {
+            background: var(--success);
+            border-color: var(--success);
+            color: var(--bg-deep);
+        }
+
+        .answer.wrong {
+            border-color: var(--error);
+            background: rgba(239, 68, 68, 0.08);
+            animation: shake 0.4s;
+        }
+        .answer.wrong .answer-mark {
+            background: var(--error);
+            border-color: var(--error);
+            color: var(--bg-deep);
+        }
+
+        @keyframes pulse-correct {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(2px); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* === EXPLANATION === */
+        .explanation {
+            margin-top: 24px;
+            padding: 18px 20px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.65;
+            color: var(--text-dim);
+            display: none;
+        }
+        .explanation.visible {
+            display: block;
+            animation: slide-in 0.3s ease-out;
+        }
+        .explanation strong { color: var(--text); }
+        .explanation code {
+            background: var(--bg-deep);
+            color: var(--accent);
+            padding: 1px 6px;
+            border-radius: 2px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.92em;
+        }
+
+        @keyframes slide-in {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .explanation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .explanation-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        /* === FOOTER === */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 28px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-faint);
+        }
+
+        .next-btn {
+            display: none;
+            padding: 10px 24px;
+            background: var(--accent);
+            color: var(--bg-deep);
+            border: none;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .next-btn:hover {
+            background: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+        }
+        .next-btn.visible { display: block; }
+
+        /* === START SCREEN === */
+        .start {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 80px 32px;
+            min-height: 600px;
+        }
+
+        .start-mark {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--accent);
+            letter-spacing: 0.3em;
+            margin-bottom: 16px;
+        }
+
+        .start-title {
+            font-size: 56px;
+            font-weight: 900;
+            line-height: 0.95;
+            letter-spacing: -0.04em;
+            margin-bottom: 16px;
+        }
+
+        .start-title .accent { color: var(--accent); }
+
+        .start-tagline {
+            font-size: 16px;
+            color: var(--text-dim);
+            margin-bottom: 40px;
+            max-width: 480px;
+        }
+
+        .start-features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 48px;
+            width: 100%;
+            max-width: 600px;
+        }
+        .start-feature {
+            padding: 16px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+        .start-feature-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .start-feature-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .start-btn {
+            padding: 16px 48px;
+            background: var(--accent);
+            color: var(--bg-deep);
+            border: none;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+        }
+
+        /* === END SCREEN === */
+        .end {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 60px 32px;
+        }
+
+        .end-emoji {
+            font-size: 80px;
+            margin-bottom: 16px;
+            line-height: 1;
+        }
+
+        .end-title {
+            font-size: 48px;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            margin-bottom: 12px;
+        }
+
+        .end-score {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 56px;
+            color: var(--accent);
+            font-weight: 800;
+            margin: 24px 0;
+            line-height: 1;
+        }
+
+        .end-score-suffix {
+            color: var(--text-dim);
+            font-size: 24px;
+        }
+
+        .end-rank {
+            display: inline-block;
+            padding: 6px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--accent);
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--accent);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 32px;
+        }
+
+        .end-message {
+            font-size: 16px;
+            color: var(--text-dim);
+            line-height: 1.6;
+            max-width: 520px;
+            margin-bottom: 40px;
+        }
+
+        .end-actions {
+            display: flex;
+            gap: 12px;
+        }
+        .restart-btn {
+            padding: 14px 32px;
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .restart-btn:hover {
+            background: var(--accent);
+            color: var(--bg-deep);
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 640px) {
+            .stage { padding: 16px 12px; }
+            .card { padding: 24px 16px; }
+            .question { font-size: 18px; }
+            .start-title { font-size: 40px; }
+            .start-features { grid-template-columns: 1fr; }
+            .stats { flex-direction: column; gap: 4px; }
+            header { flex-direction: column; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="stage">
+
+        <header>
+            <div>
+                <div class="brand">
+                    <span class="brand-mark">QUEST_</span>
+                    <h1 class="title">Data Engineering</h1>
+                </div>
+                <div class="subtitle">Czech Company Research / Quiz module</div>
+            </div>
+            <div class="stats" id="stats" style="display:none;">
+                <div class="stat lvl">
+                    <span class="stat-label">Level</span>
+                    <span class="stat-value" id="lvl-val">1</span>
+                </div>
+                <div class="stat hp">
+                    <span class="stat-label">Score</span>
+                    <span class="stat-value" id="score-val">0</span>
+                </div>
+            </div>
+        </header>
+
+        <div id="content">
+            <!-- Start screen -->
+            <div class="start">
+                <div class="start-mark">// READY PLAYER ONE</div>
+                <h2 class="start-title">Otestuj si <span class="accent">znalosti</span><br>z reálného projektu</h2>
+                <p class="start-tagline">15 otázek z Pythonu, PostgreSQL, scrapingu, parsingu PDF a Dockeru — všechno z reálného kódu Czech Company Research projektu.</p>
+
+                <div class="start-features">
+                    <div class="start-feature">
+                        <div class="start-feature-num">15</div>
+                        <div class="start-feature-label">Otázek</div>
+                    </div>
+                    <div class="start-feature">
+                        <div class="start-feature-num">~10</div>
+                        <div class="start-feature-label">Minut</div>
+                    </div>
+                    <div class="start-feature">
+                        <div class="start-feature-num">3</div>
+                        <div class="start-feature-label">Obtížnosti</div>
+                    </div>
+                </div>
+
+                <button class="start-btn" onclick="startQuiz()">Začít quiz →</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ============= QUESTIONS =============
+        const QUESTIONS = [
+            {
+                q: "Co dělá <code>with</code> statement v Pythonu?",
+                ctx: "V projektu používáme <code>with pdfplumber.open(path) as pdf:</code> a podobně.",
+                difficulty: "easy",
+                options: [
+                    "Vytvoří novou proměnnou v lokálním scope",
+                    "Zaručí cleanup (zavření) i při výjimce",
+                    "Zrychlí běh kódu uvnitř bloku",
+                    "Vytvoří kopii objektu"
+                ],
+                correct: 1,
+                explain: "<strong>with</strong> statement spustí <code>__enter__()</code> při vstupu a <code>__exit__()</code> při výstupu — i když uvnitř spadne výjimka. Garantuje že soubory, DB spojení atd. se zavřou. Bez <code>with</code> bys musel psát try/finally."
+            },
+            {
+                q: "Validuješ české IČO. Co je <strong>poslední</strong> kontrola?",
+                ctx: "Naše funkce <code>is_valid_ico(ico)</code> v <code>group_mapper.py</code>.",
+                difficulty: "medium",
+                options: [
+                    "Délka přesně 8 znaků",
+                    "Jen číslice (žádná písmena)",
+                    "Kontrolní součet (modulo 11)",
+                    "IČO existuje v ARES"
+                ],
+                correct: 2,
+                explain: "Správné pořadí: <strong>1.</strong> délka 8, <strong>2.</strong> jen číslice, <strong>3.</strong> kontrolní součet (modulo 11). Existence v ARES je separátní krok — validace IČO je <strong>offline</strong> kontrola formátu, neověřuje že firma existuje."
+            },
+            {
+                q: "Co je SERIAL v PostgreSQL?",
+                difficulty: "easy",
+                options: [
+                    "Datum/čas (timestamp)",
+                    "Auto-increment integer",
+                    "Sériové číslo dokumentu",
+                    "Text fixní délky"
+                ],
+                correct: 1,
+                explain: "<code>SERIAL</code> je zkratka pro <code>INTEGER NOT NULL DEFAULT nextval(sequence)</code>. Při INSERT se automaticky vygeneruje další číslo. Pro nové projekty se doporučuje modernější <code>GENERATED BY DEFAULT AS IDENTITY</code>, ale SERIAL je standard a funguje stejně."
+            },
+            {
+                q: "Spustíš <code>docker compose up</code> a chceš data DB zachovat. Co potřebuješ?",
+                difficulty: "medium",
+                options: [
+                    "Nic, Docker všechno uchovává automaticky",
+                    "Volume — buď named nebo bind mount",
+                    "Nastavit RESTART policy v compose",
+                    "Mít alespoň 4 GB RAM"
+                ],
+                correct: 1,
+                explain: "Container má <strong>dočasný filesystem</strong>. Když ho smažeš, data se ztratí. <code>volumes:</code> v compose umožní data uložit mimo container. <strong>Named volume</strong> (<code>pgdata:/var/lib/...</code>) je managed Dockerem, <strong>bind mount</strong> (<code>./data:/var/lib/...</code>) je mapování na local filesystem."
+            },
+            {
+                q: "Děláš HTTP scraping. Server tě začne odmítat. Co je <strong>nejpravděpodobnější</strong> příčina?",
+                difficulty: "easy",
+                options: [
+                    "Špatný User-Agent header",
+                    "Pomalá síť",
+                    "Chybí HTTPS",
+                    "Špatná verze Pythonu"
+                ],
+                correct: 0,
+                explain: "Servery často kontrolují User-Agent. Default <code>python-requests/2.31.0</code> je obvykle blokovaný (vypadá jako bot). Setni si realistický User-Agent: <code>{'User-Agent': 'Mozilla/5.0 ...'}</code>. V projektu jsme čestní: <code>'company-research-scraper/1.0'</code>."
+            },
+            {
+                q: "<code>response.raise_for_status()</code> v <code>requests</code> dělá co?",
+                difficulty: "medium",
+                options: [
+                    "Vrátí HTTP status kód jako string",
+                    "Vyvolá výjimku pro 4xx a 5xx response",
+                    "Resetuje connection",
+                    "Zaloguje response do souboru"
+                ],
+                correct: 1,
+                explain: "<code>raise_for_status()</code> je rychlý způsob jak udělat error handling. Pro <strong>2xx</strong> nedělá nic, pro <strong>4xx/5xx</strong> hodí <code>HTTPError</code>. Bez něj musíš ručně kontrolovat <code>response.status_code &lt; 400</code>."
+            },
+            {
+                q: "Co dělá tento PostgreSQL trigger?<div class='code-block' data-lang='SQL'><span class='kw'>CREATE TRIGGER</span> trg_calc<br><span class='kw'>BEFORE INSERT OR UPDATE ON</span> financials<br><span class='kw'>FOR EACH ROW</span><br><span class='kw'>EXECUTE FUNCTION</span> calc_ratios();</div>",
+                difficulty: "medium",
+                options: [
+                    "Spustí calc_ratios() jednou při startu DB",
+                    "Spustí calc_ratios() pro každý řádek před INSERT/UPDATE",
+                    "Vrací hodnoty z calc_ratios() místo skutečných dat",
+                    "Zablokuje INSERT pokud calc_ratios() vrátí FALSE"
+                ],
+                correct: 1,
+                explain: "<strong>BEFORE INSERT/UPDATE</strong> = trigger se spustí <strong>před</strong> uložením. <strong>FOR EACH ROW</strong> = pro každý řádek (na rozdíl od FOR EACH STATEMENT, který by se spustil jednou). Trigger může v <code>NEW</code> proměnné upravit data před uložením — proto v projektu spočítáme ROE/ROA automaticky."
+            },
+            {
+                q: "Které tvrzení o Docker images a containers je <strong>správně</strong>?",
+                difficulty: "medium",
+                options: [
+                    "Image je instance containeru",
+                    "Container je instance image",
+                    "Image a container jsou synonymum",
+                    "Image obsahuje běžící processy"
+                ],
+                correct: 1,
+                explain: "<strong>Image</strong> je read-only template (jako .iso). <strong>Container</strong> je <strong>běžící instance</strong> image (jako spuštěný program z .iso). Z jednoho image můžeš spustit X containers."
+            },
+            {
+                q: "<code>recursive CTE</code> v PostgreSQL — k čemu se hodí?",
+                ctx: "V projektu řešíme hierarchii skupiny firem (parent/subsidiary).",
+                difficulty: "hard",
+                options: [
+                    "Pro stránkování velkých výsledků",
+                    "Pro hierarchická a graph-like data",
+                    "Pro fulltext vyhledávání",
+                    "Pro automatické zálohování"
+                ],
+                correct: 1,
+                explain: "Recursive CTE umí <strong>self-reference</strong> — query odkazuje na sebe sama. Ideální pro stromy (org chart, kategorie), grafy (followers), navigaci (parent/child). V našem projektu: najít celou hierarchii skupiny firem (parent → subsidiary → subsidiary's subsidiary...). Bez něj by to vyžadovalo neomezený počet self-joins."
+            },
+            {
+                q: "Tento SQL má <strong>bug</strong>. Najdi ho:<div class='code-block' data-lang='SQL'><span class='kw'>WITH RECURSIVE</span> tree <span class='kw'>AS</span> (<br>&nbsp;&nbsp;<span class='kw'>SELECT</span> from_ico, to_ico <span class='kw'>FROM</span> relations<br>&nbsp;&nbsp;<span class='kw'>WHERE</span> from_ico = <span class='str'>'27376184'</span><br>&nbsp;&nbsp;<span class='kw'>UNION ALL</span><br>&nbsp;&nbsp;<span class='kw'>SELECT</span> r.from_ico, r.to_ico<br>&nbsp;&nbsp;<span class='kw'>FROM</span> relations r <span class='kw'>JOIN</span> tree t<br>&nbsp;&nbsp;<span class='kw'>ON</span> t.to_ico = r.from_ico<br>) <span class='kw'>SELECT</span> * <span class='kw'>FROM</span> tree;</div>",
+                difficulty: "hard",
+                options: [
+                    "Špatný UNION — má být UNION (bez ALL)",
+                    "Chybí pojistka proti cyklům — může běžet navždy",
+                    "Nesprávný syntax — mělo by být WITH RECURSIVE NOCYCLE",
+                    "Recursive CTE nemůže používat JOIN"
+                ],
+                correct: 1,
+                explain: "<strong>Pojistka proti cyklům!</strong> Pokud je v datech cyklus (A vlastní B, B vlastní A), CTE poběží navždy. Vždy přidej <code>WHERE NOT (r.to_ico = ANY(path))</code> nebo <code>WHERE depth &lt; 10</code>. <strong>UNION ALL</strong> je správně — UNION (bez ALL) by zbytečně dedupkoval data v každém kroku."
+            },
+            {
+                q: "<code>pdfplumber</code> ti vrací <strong>prázdný text</strong> z PDF. Proč?",
+                difficulty: "medium",
+                options: [
+                    "PDF je příliš velké",
+                    "PDF je heslem chráněné",
+                    "PDF je sken (obrázek), ne text",
+                    "Špatná verze Pythonu"
+                ],
+                correct: 2,
+                explain: "<strong>Skenované PDF</strong> jsou jen obrázky — žádný strojově čitelný text. Pro extrakci textu z nich potřebuješ <strong>OCR</strong> (Optical Character Recognition) — typicky <code>pytesseract</code> + <code>pdf2image</code>. <code>pdfplumber</code> umí jen text-based PDF. (Pozn: pro heslem chráněné PDF by hodilo výjimku, ne prázdný text.)"
+            },
+            {
+                q: "Tento Python kód má <strong>bug</strong>. Najdi ho:<div class='code-block' data-lang='Python'><span class='kw'>def</span> <span class='fn'>process_companies</span>(icos, results=[]):<br>&nbsp;&nbsp;<span class='kw'>for</span> ico <span class='kw'>in</span> icos:<br>&nbsp;&nbsp;&nbsp;&nbsp;data = fetch_ares(ico)<br>&nbsp;&nbsp;&nbsp;&nbsp;results.append(data)<br>&nbsp;&nbsp;<span class='kw'>return</span> results</div>",
+                difficulty: "hard",
+                options: [
+                    "Chybí type hints",
+                    "Mutable default argument (results=[])",
+                    "Měl by se použít list comprehension",
+                    "Chybí docstring"
+                ],
+                correct: 1,
+                explain: "<strong>Mutable default argument</strong> je klasický Python gotcha. Default <code>[]</code> se vytvoří <strong>jednou</strong> při definici funkce, ne při každém volání. Při dalším volání bez <code>results</code> se použije ten samý list včetně dat z předchozího volání! <strong>Správně:</strong> <code>def process_companies(icos, results=None): if results is None: results = []</code>."
+            },
+            {
+                q: "Děláš <code>git push --force</code> na branch <code>main</code>. Co se stane?",
+                difficulty: "easy",
+                options: [
+                    "Push proběhne rychleji",
+                    "Můžeš přepsat historii a kolegovi smazat commity",
+                    "Vyžádá si extra heslo",
+                    "Nemá žádný efekt navíc oproti push"
+                ],
+                correct: 1,
+                explain: "<code>--force</code> přepíše remote branch tvou lokální verzí. Pokud kolega mezitím pushnul commity, ty <strong>zmizí</strong>. Na chráněných branches (main) je obvykle blokované. <strong>Pravidlo:</strong> NIKDY <code>--force</code> na main, na vlastní feature branch jen po odhlášení teamu."
+            },
+            {
+                q: "Co dělá tento Docker příkaz?<div class='code-block' data-lang='Bash'>docker run -d \\<br>&nbsp;&nbsp;-p 8080:5000 \\<br>&nbsp;&nbsp;-v ./data:/app/data \\<br>&nbsp;&nbsp;myapp:v1</div>",
+                difficulty: "medium",
+                options: [
+                    "Spustí container interaktivně, port 5000 mapuje na 8080",
+                    "Spustí container na pozadí, host:8080 → container:5000, mountuje ./data",
+                    "Stáhne image myapp:v1 a uloží data do /app/data",
+                    "Spustí 8080 instancí containeru"
+                ],
+                correct: 1,
+                explain: "<strong>-d</strong> = detached (na pozadí). <strong>-p 8080:5000</strong> = host port 8080 → container port 5000. <strong>-v ./data:/app/data</strong> = bind mount lokální složky. Z prohlížeče: <code>http://localhost:8080</code>."
+            },
+            {
+                q: "Tvůj scraper začne dostávat <strong>HTTP 429</strong>. Co je to a co s tím?",
+                difficulty: "medium",
+                options: [
+                    "Server padl, zkus za chvilku",
+                    "Rate limit překročen, snížit frekvenci",
+                    "Chybí autentizace, přidat API key",
+                    "Špatná URL, zkontrolovat endpoint"
+                ],
+                correct: 1,
+                explain: "<strong>429 Too Many Requests</strong> = překročil jsi rate limit. <strong>Řešení:</strong> přidat <code>time.sleep()</code> mezi requesty, implementovat exponential backoff (1s, 2s, 4s...), respektovat <code>Retry-After</code> header pokud server vrátí. V projektu máme <code>JusticeScraper.RATE_LIMIT = 1.5</code>."
+            }
+        ];
+
+        // ============= STATE =============
+        let currentQ = 0;
+        let score = 0;
+        let answered = false;
+
+        // ============= UI =============
+        function startQuiz() {
+            document.getElementById('stats').style.display = 'flex';
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            answered = false;
+            document.getElementById('lvl-val').textContent = currentQ + 1;
+            document.getElementById('score-val').textContent = score;
+
+            const q = QUESTIONS[currentQ];
+            const progress = ((currentQ) / QUESTIONS.length) * 100;
+
+            const html = `
+                <div class="progress-shell">
+                    <div class="progress-label">
+                        <span>Question ${currentQ + 1} / ${QUESTIONS.length}</span>
+                        <span>${Math.round(progress)}%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" style="right: ${100 - progress}%;"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="question-num">
+                        Q${String(currentQ + 1).padStart(2, '0')}
+                        <span class="difficulty ${q.difficulty}">${q.difficulty}</span>
+                    </div>
+                    <div class="question">${q.q}</div>
+                    ${q.ctx ? `<div class="context">${q.ctx}</div>` : ''}
+
+                    <div class="answers" id="answers">
+                        ${q.options.map((opt, i) => `
+                            <button class="answer" onclick="selectAnswer(${i})">
+                                <span class="answer-mark">${String.fromCharCode(65 + i)}</span>
+                                <span>${opt}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+
+                    <div class="explanation" id="explanation">
+                        <div class="explanation-header">
+                            <span class="explanation-tag" id="exp-tag">// EXPLANATION</span>
+                        </div>
+                        <div id="explanation-text"></div>
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <span id="footer-status">// SELECT AN ANSWER</span>
+                    <button class="next-btn" id="next-btn" onclick="nextQuestion()">
+                        ${currentQ === QUESTIONS.length - 1 ? 'Show Results →' : 'Next Question →'}
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('content').innerHTML = html;
+        }
+
+        function selectAnswer(idx) {
+            if (answered) return;
+            answered = true;
+
+            const q = QUESTIONS[currentQ];
+            const buttons = document.querySelectorAll('.answer');
+            const explanation = document.getElementById('explanation');
+            const explTag = document.getElementById('exp-tag');
+            const explText = document.getElementById('explanation-text');
+            const footerStatus = document.getElementById('footer-status');
+            const nextBtn = document.getElementById('next-btn');
+
+            buttons.forEach((btn, i) => {
+                btn.disabled = true;
+                if (i === q.correct) btn.classList.add('correct');
+                else if (i === idx && idx !== q.correct) btn.classList.add('wrong');
+            });
+
+            if (idx === q.correct) {
+                score += q.difficulty === 'hard' ? 3 : q.difficulty === 'medium' ? 2 : 1;
+                explTag.textContent = '// CORRECT';
+                explTag.style.color = 'var(--success)';
+                footerStatus.textContent = '// + ' + (q.difficulty === 'hard' ? 3 : q.difficulty === 'medium' ? 2 : 1) + ' points';
+            } else {
+                explTag.textContent = '// INCORRECT';
+                explTag.style.color = 'var(--error)';
+                footerStatus.textContent = '// no points awarded';
+            }
+
+            explText.innerHTML = q.explain;
+            explanation.classList.add('visible');
+            nextBtn.classList.add('visible');
+
+            document.getElementById('score-val').textContent = score;
+
+            // Auto-scroll explanation into view
+            setTimeout(() => {
+                explanation.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+
+        function nextQuestion() {
+            currentQ++;
+            if (currentQ >= QUESTIONS.length) {
+                showResults();
+            } else {
+                renderQuestion();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function showResults() {
+            const maxScore = QUESTIONS.reduce((sum, q) => sum + (q.difficulty === 'hard' ? 3 : q.difficulty === 'medium' ? 2 : 1), 0);
+            const pct = (score / maxScore * 100).toFixed(0);
+
+            let emoji, title, message, rank;
+            if (pct >= 90) {
+                emoji = '🏆'; title = 'Master'; rank = 'DATA ENGINEER ★★★';
+                message = 'Skvělý výkon! Zvládl jsi i nejtěžší otázky. Tyhle znalosti tě dostanou přes pohovor v jakékoliv firmě.';
+            } else if (pct >= 70) {
+                emoji = '⚡'; title = 'Senior'; rank = 'DATA ENGINEER ★★';
+                message = 'Velmi dobré! Většinu konceptů máš solidní. Projdi si znovu otázky kde jsi chyboval — typicky to bývají detail v PostgreSQL nebo edge cases.';
+            } else if (pct >= 50) {
+                emoji = '🚀'; title = 'Junior+'; rank = 'DATA ENGINEER ★';
+                message = 'Dobrý začátek! Základy máš, ale je co zlepšovat. Doporučuji projít si Modul B (PostgreSQL) a Modul A (Python) ještě jednou. Pokus se quiz znova za týden.';
+            } else {
+                emoji = '🌱'; title = 'Apprentice'; rank = 'TRAINEE';
+                message = 'Začínáš! To je v pořádku — projdi si učební materiály (WSL2, Modul A-D), zkus kód v projektu, a vrať se za 2 týdny. Praxe dělá mistra.';
+            }
+
+            const html = `
+                <div class="end">
+                    <div class="end-emoji">${emoji}</div>
+                    <h2 class="end-title">${title}</h2>
+                    <div class="end-rank">${rank}</div>
+                    <div class="end-score">
+                        ${score}<span class="end-score-suffix">/${maxScore}</span>
+                    </div>
+                    <p class="end-message">${message}</p>
+                    <div class="end-actions">
+                        <button class="restart-btn" onclick="restart()">↻ Try again</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('content').innerHTML = html;
+            document.getElementById('stats').style.display = 'none';
+        }
+
+        function restart() {
+            currentQ = 0;
+            score = 0;
+            answered = false;
+            startQuiz();
+        }
+    </script>
+</body>
+</html>
