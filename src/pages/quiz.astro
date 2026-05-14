@@ -1,0 +1,33 @@
+---
+import Base from "@/layouts/Base.astro";
+---
+
+<Base
+  title="Data Engineering Quest — Czech Company Research"
+  meta_title="Data Engineering Quest — Czech Company Research Quiz"
+  description="Quiz z Pythonu, PostgreSQL, scrapingu, parsingu PDF a Dockeru z reálného kódu Czech Company Research projektu."
+>
+  <div class="game-wrapper">
+    <iframe
+      src="/quiz-game.html"
+      title="Data Engineering Quest — Czech Company Research Quiz"
+      width="100%"
+      frameborder="0"
+      transition:animate="none"
+    ></iframe>
+  </div>
+</Base>
+
+<style>
+  .game-wrapper {
+    width: 100%;
+  }
+
+  .game-wrapper iframe {
+    display: block;
+    width: 100%;
+    height: calc(100vh - 80px);
+    min-height: 600px;
+    border: none;
+  }
+</style>
