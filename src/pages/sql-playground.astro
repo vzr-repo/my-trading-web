@@ -192,6 +192,58 @@ import Base from "@/layouts/Base.astro";
     @keyframes sqlpulse { 0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
 
     .sql-hidden { display: none !important; }
+
+    /* TOAST */
+    .sql-toast {
+      margin-top: 0.5rem;
+      padding: 0.5rem 0.85rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--gain);
+      background: rgba(135, 217, 108, 0.08);
+      border: 1px solid rgba(135, 217, 108, 0.3);
+      border-radius: 6px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .sql-toast.show { opacity: 1; }
+
+    /* CODEMIRROR overrides — match dark theme */
+    .cm-editor {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      min-height: 180px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .cm-editor.cm-focused {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .cm-editor .cm-scroller {
+      font-family: 'JetBrains Mono', monospace;
+      padding: 0.5rem 0;
+    }
+    .cm-editor .cm-content {
+      padding: 0.5rem 0.5rem;
+      caret-color: var(--accent);
+    }
+    .cm-editor .cm-gutters {
+      background: var(--bg-elevated);
+      border-right: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+    .cm-editor .cm-activeLine,
+    .cm-editor .cm-activeLineGutter {
+      background-color: rgba(92, 207, 230, 0.04);
+    }
+    .cm-editor .cm-selectionBackground,
+    .cm-editor.cm-focused .cm-selectionBackground,
+    .cm-editor ::selection {
+      background: rgba(92, 207, 230, 0.18) !important;
+    }
   </style>
 
   <section class="section">
@@ -237,7 +289,9 @@ SELECT ticker, close FROM prices LIMIT 5;"></textarea>
               <div class="sql-toolbar">
                 <button id="sql-run-btn" class="sql-btn primary">▶ Run query <span class="sql-kbd">Ctrl+Enter</span></button>
                 <button id="sql-clear-btn" class="sql-btn secondary">Clear</button>
+                <button id="sql-share-btn" class="sql-btn secondary" title="Zkopíruje URL s tímto dotazem do schránky">🔗 Share</button>
               </div>
+              <div id="sql-toast" class="sql-toast sql-hidden"></div>
             </div>
           </div>
 
@@ -284,6 +338,66 @@ SELECT ticker, close FROM prices LIMIT 5;"></textarea>
 
     </div>
   </section>
+
+  <script>
+    // ============================================================
+    // CodeMirror — bundled by Astro/Vite. Exposes upgradeTextarea
+    // on window for the inline script (which manages all other UI).
+    // ============================================================
+    import { EditorView, basicSetup } from 'codemirror';
+    import { keymap } from '@codemirror/view';
+    import { sql, SQLite } from '@codemirror/lang-sql';
+    import { oneDark } from '@codemirror/theme-one-dark';
+
+    const SCHEMA = {
+      prices: ['ticker', 'date', 'open', 'high', 'low', 'close', 'volume'],
+    };
+
+    const upgraded = new WeakSet();
+
+    function upgradeTextarea(textarea, onSubmit) {
+      if (!textarea || upgraded.has(textarea)) return null;
+      upgraded.add(textarea);
+
+      const view = new EditorView({
+        doc: textarea.value || '',
+        extensions: [
+          basicSetup,
+          sql({ dialect: SQLite, schema: SCHEMA, upperCaseKeywords: true }),
+          oneDark,
+          keymap.of([{
+            key: 'Mod-Enter',
+            run: () => { onSubmit?.(view.state.doc.toString()); return true; },
+            preventDefault: true,
+          }]),
+          EditorView.updateListener.of((u) => {
+            if (u.docChanged) textarea.value = u.state.doc.toString();
+          }),
+          EditorView.theme({
+            '&': { minHeight: '180px' },
+            '.cm-scroller': { overflow: 'auto', maxHeight: '420px' },
+          }),
+        ],
+      });
+
+      textarea.style.display = 'none';
+      textarea.parentNode.insertBefore(view.dom, textarea.nextSibling);
+
+      // Mirror textarea.value <-> editor for outsiders that still read/set .value
+      Object.defineProperty(textarea, 'value', {
+        configurable: true,
+        get: () => view.state.doc.toString(),
+        set: (v) => {
+          view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: v || '' } });
+        },
+      });
+      textarea.focus = () => view.focus();
+      return view;
+    }
+
+    window.SqlPlaygroundEditor = { upgradeTextarea };
+    window.dispatchEvent(new CustomEvent('sql-playground-editor-ready'));
+  </script>
 
   <script is:inline>
   // ============================================================
@@ -359,6 +473,9 @@ SELECT ticker, close FROM prices LIMIT 5;"></textarea>
     const tickers = tickersResult[0].values.map(r => r[0]);
     const list = document.getElementById('schema-tickers');
     list.innerHTML = `<li><span class="col-name">Tickers</span><span class="col-type">${tickers.join(', ')}</span></li>`;
+
+    // After DB is ready, apply any shared SQL from ?q=
+    applyShareFromURL();
   }
 
   // ============================================================
@@ -436,6 +553,21 @@ SELECT ticker, close FROM prices LIMIT 5;"></textarea>
   const editor = document.getElementById('sql-editor');
   const runBtn = document.getElementById('sql-run-btn');
   const clearBtn = document.getElementById('sql-clear-btn');
+  const shareBtn = document.getElementById('sql-share-btn');
+  const toast = document.getElementById('sql-toast');
+
+  // Upgrade textarea to CodeMirror if bundle is ready (otherwise use plain textarea).
+  function upgradeEditor(ta, onSubmit) {
+    if (window.SqlPlaygroundEditor) {
+      window.SqlPlaygroundEditor.upgradeTextarea(ta, onSubmit);
+    } else {
+      // Bundle not ready yet — wait for it
+      window.addEventListener('sql-playground-editor-ready', () => {
+        window.SqlPlaygroundEditor.upgradeTextarea(ta, onSubmit);
+      }, { once: true });
+    }
+  }
+  upgradeEditor(editor, (val) => runQuery(val));
 
   runBtn.addEventListener('click', () => runQuery(editor.value));
   clearBtn.addEventListener('click', () => {
@@ -444,6 +576,7 @@ SELECT ticker, close FROM prices LIMIT 5;"></textarea>
     editor.focus();
   });
 
+  // Plain-textarea fallback keydown (no-op once CodeMirror upgrades it)
   editor.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
@@ -464,6 +597,62 @@ SELECT ticker, close FROM prices LIMIT 5;"></textarea>
       editor.focus();
     });
   });
+
+  // ============================================================
+  // SHARING — encode SQL as base64 URL param, decode on load
+  // ============================================================
+  function showToast(msg, isError) {
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.style.color = isError ? 'var(--loss)' : 'var(--gain)';
+    toast.style.background = isError ? 'rgba(255, 107, 107, 0.08)' : 'rgba(135, 217, 108, 0.08)';
+    toast.style.borderColor = isError ? 'rgba(255, 107, 107, 0.3)' : 'rgba(135, 217, 108, 0.3)';
+    toast.classList.remove('sql-hidden');
+    requestAnimationFrame(() => toast.classList.add('show'));
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.classList.add('sql-hidden'), 250);
+    }, 2500);
+  }
+
+  function encodeSql(sql) {
+    // base64url to keep URL clean
+    const b64 = btoa(unescape(encodeURIComponent(sql)));
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function decodeSql(s) {
+    try {
+      let b64 = s.replace(/-/g, '+').replace(/_/g, '/');
+      while (b64.length % 4) b64 += '=';
+      return decodeURIComponent(escape(atob(b64)));
+    } catch (e) { return null; }
+  }
+
+  shareBtn?.addEventListener('click', async () => {
+    const sql = (editor.value || '').trim();
+    if (!sql) { showToast('Editor je prázdný — není co sdílet.', true); return; }
+    const url = `${location.origin}${location.pathname}?q=${encodeSql(sql)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('✓ URL zkopírováno do schránky');
+    } catch (e) {
+      // Fallback: select-and-prompt
+      window.prompt('Zkopíruj URL ručně:', url);
+    }
+  });
+
+  // Read ?q= from URL on init — pre-fill and auto-run after DB ready
+  function applyShareFromURL() {
+    const params = new URLSearchParams(location.search);
+    const q = params.get('q');
+    if (!q) return;
+    const sql = decodeSql(q);
+    if (!sql) return;
+    editor.value = sql;
+    // Auto-run if DB already loaded; otherwise the chip-like behavior would error
+    if (db) runQuery(sql);
+  }
 
   // ============================================================
   // TABS
@@ -614,6 +803,9 @@ SELECT ticker, close FROM prices LIMIT 5;"></textarea>
     `;
 
     const qe = document.getElementById('quiz-editor');
+    // CodeMirror upgrade (provides own Ctrl+Enter handler)
+    upgradeEditor(qe, () => checkQuiz());
+    // Fallback for textarea if bundle not ready yet
     qe.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); checkQuiz(); }
       if (e.key === 'Tab') {
