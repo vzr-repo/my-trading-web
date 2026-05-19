@@ -1,0 +1,658 @@
+---
+import Base from "@/layouts/Base.astro";
+---
+
+<Base
+  title="SQL Playground"
+  meta_title="SQL Playground — Real stock data in your browser"
+  description="Interaktivní SQL playground nad reálnými stock daty. Bez backendu — celá databáze běží v prohlížeči přes SQLite + WebAssembly."
+>
+  <style is:global>
+    :root {
+      --bg: #0a0e14;
+      --bg-elevated: #0f1419;
+      --bg-input: #151b23;
+      --border: #1f2630;
+      --border-strong: #2a3441;
+      --text: #d4dce5;
+      --text-muted: #6b7785;
+      --text-dim: #4a5462;
+      --accent: #5ccfe6;
+      --accent-dim: #1d4e58;
+      --gain: #87d96c;
+      --loss: #ff6b6b;
+      --warn: #ffcc66;
+      --shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+
+    .sql-pg-wrap { max-width: 1200px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+    /* HEADER */
+    .sql-pg-header { margin-bottom: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; }
+    .sql-pg-brand { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0.04em; }
+    .sql-pg-brand::before { content: '$'; color: var(--accent); font-weight: 700; }
+    .sql-pg-brand a { color: var(--text-muted); text-decoration: none; transition: color 0.15s; }
+    .sql-pg-brand a:hover { color: var(--accent); }
+    .sql-pg-wrap h1 { font-size: clamp(1.8rem, 4vw, 2.5rem); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+    .sql-pg-wrap h1 .accent { color: var(--accent); }
+    .sql-pg-subtitle { color: var(--text-muted); font-size: 1rem; max-width: 60ch; }
+
+    /* TABS */
+    .sql-tabs { display: flex; gap: 2px; margin-bottom: 1.5rem; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 4px; width: fit-content; }
+    .sql-tab { padding: 0.5rem 1.25rem; font-family: inherit; font-size: 0.9rem; font-weight: 500; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 5px; transition: all 0.15s; }
+    .sql-tab:hover { color: var(--text); }
+    .sql-tab.active { background: var(--bg-input); color: var(--accent); }
+
+    /* PANELS */
+    .sql-panel { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); }
+    .sql-panel-header { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); }
+    .sql-panel-title { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+    .sql-panel-body { padding: 1.25rem; }
+
+    /* SCHEMA REFERENCE */
+    .sql-schema { display: grid; grid-template-columns: 1fr; gap: 0.75rem; margin-bottom: 1.5rem; }
+    @media (min-width: 720px) { .sql-schema { grid-template-columns: 1fr 1fr; } }
+    .sql-schema-card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; }
+    .sql-schema-card h3 { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent); margin-bottom: 0.5rem; letter-spacing: 0.04em; }
+    .sql-schema-card ul { list-style: none; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text); }
+    .sql-schema-card li { padding: 0.15rem 0; display: flex; gap: 0.75rem; }
+    .col-name { color: var(--text); min-width: 70px; }
+    .col-type { color: var(--text-dim); font-size: 0.75rem; }
+    .sql-schema-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; font-family: 'JetBrains Mono', monospace; }
+
+    /* PLAYGROUND */
+    .sql-playground-grid { display: grid; gap: 1rem; }
+    textarea.sql-editor {
+      width: 100%;
+      min-height: 180px;
+      background: var(--bg-input);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      resize: vertical;
+      outline: none;
+      transition: border 0.15s;
+      tab-size: 2;
+    }
+    textarea.sql-editor:focus { border-color: var(--accent); }
+
+    .sql-toolbar { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; align-items: center; }
+    .sql-btn {
+      padding: 0.55rem 1.25rem;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-input);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .sql-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .sql-btn.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+    .sql-btn.primary:hover { background: #7ddef3; color: var(--bg); }
+    .sql-btn.secondary { font-size: 0.8rem; padding: 0.4rem 0.85rem; }
+    .sql-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .sql-kbd { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); padding: 0.1rem 0.4rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); }
+
+    .sql-examples { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .sql-example-chip {
+      padding: 0.3rem 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sql-example-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* RESULTS */
+    .sql-results { margin-top: 1rem; }
+    .sql-results-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-elevated);
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .sql-results-meta.error { color: var(--loss); background: rgba(255, 107, 107, 0.08); border: 1px solid rgba(255, 107, 107, 0.2); }
+    .sql-results-meta.success { color: var(--gain); }
+    .sql-results-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; max-height: 480px; overflow-y: auto; }
+    table.sql-results-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 0.825rem; }
+    table.sql-results-table th { background: var(--bg-input); color: var(--accent); text-align: left; padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--border-strong); position: sticky; top: 0; font-weight: 500; letter-spacing: 0.02em; font-size: 0.78rem; text-transform: uppercase; }
+    table.sql-results-table td { padding: 0.5rem 0.85rem; border-bottom: 1px solid var(--border); color: var(--text); }
+    table.sql-results-table tr:hover td { background: rgba(92, 207, 230, 0.03); }
+    table.sql-results-table td.numeric { text-align: right; color: var(--text); }
+    table.sql-results-table td.numeric.positive { color: var(--gain); }
+    table.sql-results-table td.numeric.negative { color: var(--loss); }
+
+    /* QUIZ */
+    .sql-quiz-progress { display: flex; gap: 4px; margin-bottom: 1.5rem; }
+    .sql-quiz-dot { flex: 1; height: 4px; background: var(--border); border-radius: 2px; transition: background 0.3s; }
+    .sql-quiz-dot.completed { background: var(--gain); }
+    .sql-quiz-dot.current { background: var(--accent); }
+
+    .sql-quiz-question {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .sql-quiz-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      margin-bottom: 0.5rem;
+    }
+    .sql-quiz-title { font-size: 1.15rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .sql-quiz-task { color: var(--text-muted); margin-bottom: 1rem; }
+    .sql-quiz-task code {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg);
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      color: var(--accent);
+      font-size: 0.85em;
+    }
+
+    .sql-quiz-feedback { margin-top: 0.75rem; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.875rem; }
+    .sql-quiz-feedback.success { background: rgba(135, 217, 108, 0.08); border: 1px solid rgba(135, 217, 108, 0.3); color: var(--gain); }
+    .sql-quiz-feedback.hint { background: rgba(255, 204, 102, 0.08); border: 1px solid rgba(255, 204, 102, 0.25); color: var(--warn); }
+    .sql-quiz-feedback.error { background: rgba(255, 107, 107, 0.08); border: 1px solid rgba(255, 107, 107, 0.25); color: var(--loss); }
+
+    .sql-hint-box { margin-top: 0.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-muted); padding: 0.75rem; background: var(--bg); border-left: 2px solid var(--warn); border-radius: 4px; }
+
+    .sql-quiz-complete { text-align: center; padding: 2.5rem 1.5rem; }
+    .sql-quiz-complete h2 { font-size: 1.75rem; margin-bottom: 0.5rem; color: var(--gain); }
+    .sql-quiz-complete p { color: var(--text-muted); margin-bottom: 1.5rem; }
+
+    /* LOADING */
+    .sql-loading { display: flex; align-items: center; justify-content: center; padding: 4rem 1rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
+    .sql-loading-dot { display: inline-block; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; margin: 0 2px; animation: sqlpulse 1.4s infinite ease-in-out; }
+    .sql-loading-dot:nth-child(2) { animation-delay: 0.2s; }
+    .sql-loading-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes sqlpulse { 0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }
+
+    .sql-hidden { display: none !important; }
+  </style>
+
+  <section class="section">
+    <div class="sql-pg-wrap">
+
+      <header class="sql-pg-header">
+        <div class="sql-pg-brand"><a href="https://jakubvozar.cz">jakubvozar.cz</a> / sql-playground</div>
+        <h1>SQL <span class="accent">Playground</span></h1>
+        <p class="sql-pg-subtitle">Skutečná stock data v prohlížeči. Piš SQL, vidíš výsledek. Bez backendu, bez registrace — celá databáze běží v tvém prohlížeči přes SQLite + WebAssembly.</p>
+      </header>
+
+      <div class="sql-tabs">
+        <button class="sql-tab active" data-tab="playground">Playground</button>
+        <button class="sql-tab" data-tab="quiz">Quiz</button>
+        <button class="sql-tab" data-tab="schema">Schema</button>
+      </div>
+
+      <!-- LOADING -->
+      <div id="sql-loading" class="sql-loading">
+        <span>Načítám databázi</span>
+        <span class="sql-loading-dot"></span><span class="sql-loading-dot"></span><span class="sql-loading-dot"></span>
+      </div>
+
+      <!-- PLAYGROUND TAB -->
+      <div id="tab-playground" class="sql-tab-content sql-hidden">
+        <div class="sql-examples" style="margin-bottom: 1rem;">
+          <button class="sql-example-chip" data-sql="SELECT * FROM prices LIMIT 10;">SELECT prvních 10</button>
+          <button class="sql-example-chip" data-sql="SELECT DISTINCT ticker FROM prices ORDER BY ticker;">DISTINCT tickery</button>
+          <button class="sql-example-chip" data-sql="SELECT ticker, ROUND(AVG(close), 2) AS avg_close&#10;FROM prices&#10;GROUP BY ticker&#10;ORDER BY avg_close DESC;">AVG na ticker</button>
+          <button class="sql-example-chip" data-sql="SELECT ticker, MIN(close) AS min_c, MAX(close) AS max_c&#10;FROM prices&#10;GROUP BY ticker&#10;ORDER BY max_c DESC;">MIN/MAX close</button>
+          <button class="sql-example-chip" data-sql="SELECT ticker, COUNT(*) AS rows&#10;FROM prices&#10;GROUP BY ticker&#10;ORDER BY rows DESC;">COUNT na ticker</button>
+        </div>
+
+        <div class="sql-playground-grid">
+          <div class="sql-panel">
+            <div class="sql-panel-header">
+              <span class="sql-panel-title">SQL Editor</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);">SQLite dialect</span>
+            </div>
+            <div class="sql-panel-body">
+              <textarea id="sql-editor" class="sql-editor" spellcheck="false" placeholder="-- Piš SQL dotaz...
+SELECT ticker, close FROM prices LIMIT 5;"></textarea>
+              <div class="sql-toolbar">
+                <button id="sql-run-btn" class="sql-btn primary">▶ Run query <span class="sql-kbd">Ctrl+Enter</span></button>
+                <button id="sql-clear-btn" class="sql-btn secondary">Clear</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="sql-results-container"></div>
+        </div>
+      </div>
+
+      <!-- QUIZ TAB -->
+      <div id="tab-quiz" class="sql-tab-content sql-hidden">
+        <div class="sql-quiz-progress" id="sql-quiz-progress"></div>
+        <div id="sql-quiz-content"></div>
+      </div>
+
+      <!-- SCHEMA TAB -->
+      <div id="tab-schema" class="sql-tab-content sql-hidden">
+        <div class="sql-panel" style="margin-bottom: 1.5rem;">
+          <div class="sql-panel-header">
+            <span class="sql-panel-title">Tabulka: prices</span>
+            <span id="schema-rowcount" style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);">...</span>
+          </div>
+          <div class="sql-panel-body">
+            <div class="sql-schema">
+              <div class="sql-schema-card">
+                <h3>Sloupce</h3>
+                <ul>
+                  <li><span class="col-name">ticker</span><span class="col-type">TEXT — symbol akcie (např. AAPL)</span></li>
+                  <li><span class="col-name">date</span><span class="col-type">DATE — obchodní den</span></li>
+                  <li><span class="col-name">open</span><span class="col-type">REAL — otevírací cena</span></li>
+                  <li><span class="col-name">high</span><span class="col-type">REAL — denní maximum</span></li>
+                  <li><span class="col-name">low</span><span class="col-type">REAL — denní minimum</span></li>
+                  <li><span class="col-name">close</span><span class="col-type">REAL — uzavírací cena</span></li>
+                  <li><span class="col-name">volume</span><span class="col-type">INTEGER — objem obchodů</span></li>
+                </ul>
+              </div>
+              <div class="sql-schema-card">
+                <h3>Sektory</h3>
+                <ul id="schema-tickers"></ul>
+              </div>
+            </div>
+            <div class="sql-schema-meta">Data: yfinance · denní close ceny · 2020-01-01 až dnes</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
+  <script is:inline>
+  // ============================================================
+  // DATABASE INIT — fetches real prices.db from /data/
+  // ============================================================
+  let db;
+  let totalRows = 0;
+
+  async function initDB() {
+    const SQL = await initSqlJs({
+      locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}`
+    });
+
+    const today = new Date().toISOString().slice(0, 10);
+    const response = await fetch(`/data/prices.db?v=${today}`);
+    if (!response.ok) {
+      throw new Error('Databáze prices.db není dostupná. Vygeneruj ji přes export_to_sqlite.py a nahraj do public/data/.');
+    }
+
+    const buffer = await response.arrayBuffer();
+    db = new SQL.Database(new Uint8Array(buffer));
+
+    const countResult = db.exec('SELECT COUNT(*) FROM prices');
+    totalRows = countResult[0].values[0][0];
+
+    document.getElementById('sql-loading').classList.add('sql-hidden');
+    document.getElementById('tab-playground').classList.remove('sql-hidden');
+    document.getElementById('schema-rowcount').textContent =
+      `${totalRows.toLocaleString('cs-CZ')} řádků`;
+
+    const tickersResult = db.exec('SELECT DISTINCT ticker FROM prices ORDER BY ticker');
+    const tickers = tickersResult[0].values.map(r => r[0]);
+    const list = document.getElementById('schema-tickers');
+    list.innerHTML = `<li><span class="col-name">Tickers</span><span class="col-type">${tickers.join(', ')}</span></li>`;
+  }
+
+  // ============================================================
+  // QUERY EXECUTION
+  // ============================================================
+  function runQuery(sql) {
+    const container = document.getElementById('sql-results-container');
+    const t0 = performance.now();
+
+    try {
+      const result = db.exec(sql);
+      const elapsed = (performance.now() - t0).toFixed(1);
+
+      if (!result.length || !result[0].values.length) {
+        container.innerHTML = `
+          <div class="sql-panel">
+            <div class="sql-panel-header"><span class="sql-panel-title">Výsledky</span></div>
+            <div class="sql-panel-body">
+              <div class="sql-results-meta success">✓ Dotaz proběhl · 0 řádků · ${elapsed}ms</div>
+            </div>
+          </div>`;
+        return { ok: true, rows: 0, data: [] };
+      }
+
+      const { columns, values } = result[0];
+      const rowCount = values.length;
+      const displayRows = values.slice(0, 500);
+
+      let html = `
+        <div class="sql-panel">
+          <div class="sql-panel-header">
+            <span class="sql-panel-title">Výsledky</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim);">${rowCount.toLocaleString('cs-CZ')} ${rowCount === 1 ? 'řádek' : (rowCount < 5 ? 'řádky' : 'řádků')} · ${elapsed}ms</span>
+          </div>
+          <div class="sql-panel-body">
+            <div class="sql-results-table-wrap">
+              <table class="sql-results-table">
+                <thead><tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+                <tbody>
+                  ${displayRows.map(row => `<tr>${row.map((cell, i) => {
+                    const col = columns[i].toLowerCase();
+                    if (cell === null) return '<td style="color: var(--text-dim);">NULL</td>';
+                    if (typeof cell === 'number') {
+                      let cls = 'numeric';
+                      if (col.includes('change') || col.includes('pct') || col.includes('return')) {
+                        cls += cell > 0 ? ' positive' : cell < 0 ? ' negative' : '';
+                      }
+                      return `<td class="${cls}">${Number.isInteger(cell) ? cell.toLocaleString('cs-CZ') : cell.toFixed(2)}</td>`;
+                    }
+                    return `<td>${cell}</td>`;
+                  }).join('')}</tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+            ${rowCount > 500 ? `<div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">Zobrazeno prvních 500 z ${rowCount.toLocaleString('cs-CZ')} řádků.</div>` : ''}
+          </div>
+        </div>`;
+      container.innerHTML = html;
+      return { ok: true, rows: rowCount, data: values, columns };
+    } catch (e) {
+      container.innerHTML = `
+        <div class="sql-panel">
+          <div class="sql-panel-header"><span class="sql-panel-title">Chyba</span></div>
+          <div class="sql-panel-body">
+            <div class="sql-results-meta error">✕ ${e.message}</div>
+          </div>
+        </div>`;
+      return { ok: false, error: e.message };
+    }
+  }
+
+  // ============================================================
+  // PLAYGROUND HANDLERS
+  // ============================================================
+  const editor = document.getElementById('sql-editor');
+  const runBtn = document.getElementById('sql-run-btn');
+  const clearBtn = document.getElementById('sql-clear-btn');
+
+  runBtn.addEventListener('click', () => runQuery(editor.value));
+  clearBtn.addEventListener('click', () => {
+    editor.value = '';
+    document.getElementById('sql-results-container').innerHTML = '';
+    editor.focus();
+  });
+
+  editor.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runQuery(editor.value);
+    }
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const s = editor.selectionStart, end = editor.selectionEnd;
+      editor.value = editor.value.substring(0, s) + '  ' + editor.value.substring(end);
+      editor.selectionStart = editor.selectionEnd = s + 2;
+    }
+  });
+
+  document.querySelectorAll('.sql-example-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      editor.value = chip.dataset.sql;
+      runQuery(editor.value);
+      editor.focus();
+    });
+  });
+
+  // ============================================================
+  // TABS
+  // ============================================================
+  document.querySelectorAll('.sql-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.sql-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.sql-tab-content').forEach(t => t.classList.add('sql-hidden'));
+      tab.classList.add('active');
+      document.getElementById('tab-' + tab.dataset.tab).classList.remove('sql-hidden');
+    });
+  });
+
+  // ============================================================
+  // QUIZ
+  // ============================================================
+  const QUIZ = [
+    {
+      title: 'Spočítej řádky',
+      task: 'Kolik řádků celkem je v tabulce <code>prices</code>?',
+      hint: 'Použij <code>COUNT(*)</code>.',
+      check: (result) => {
+        if (!result.ok) return { ok: false, msg: 'Dotaz selhal: ' + result.error };
+        if (result.rows !== 1) return { ok: false, msg: 'Očekávám jeden řádek s celkovým počtem.' };
+        const val = result.data[0][0];
+        if (typeof val !== 'number' || val < 100) return { ok: false, msg: 'Hodnota nevypadá jako celkový počet.' };
+        return { ok: true, msg: `Správně! V databázi je ${val.toLocaleString('cs-CZ')} řádků.` };
+      }
+    },
+    {
+      title: 'Unikátní tickery',
+      task: 'Vrať seznam unikátních hodnot ve sloupci <code>ticker</code>.',
+      hint: 'Klíčové slovo je <code>DISTINCT</code>.',
+      check: (result) => {
+        if (!result.ok) return { ok: false, msg: 'Dotaz selhal: ' + result.error };
+        if (!result.columns || result.columns.length !== 1) return { ok: false, msg: 'Očekávám jeden sloupec.' };
+        if (result.rows < 5 || result.rows > 20) return { ok: false, msg: `Vrátil jsi ${result.rows} řádků — to neodpovídá počtu tickerů.` };
+        return { ok: true, msg: `Správně! V tabulce je ${result.rows} unikátních tickerů.` };
+      }
+    },
+    {
+      title: 'Filtruj jeden ticker',
+      task: 'Vrať všechny řádky pro ticker <code>AAPL</code>. Seřaď podle <code>date</code> sestupně a omez na 10 řádků.',
+      hint: 'Potřebuješ <code>WHERE</code>, <code>ORDER BY ... DESC</code> a <code>LIMIT</code>.',
+      check: (result) => {
+        if (!result.ok) return { ok: false, msg: 'Dotaz selhal: ' + result.error };
+        if (result.rows !== 10) return { ok: false, msg: `Očekávám 10 řádků, dostal jsem ${result.rows}.` };
+        const tickerCol = result.columns.findIndex(c => c.toLowerCase() === 'ticker');
+        if (tickerCol >= 0 && result.data.some(r => r[tickerCol] !== 'AAPL')) {
+          return { ok: false, msg: 'Některé řádky nejsou AAPL — zkontroluj WHERE klauzuli.' };
+        }
+        const dateCol = result.columns.findIndex(c => c.toLowerCase() === 'date');
+        if (dateCol >= 0 && result.data.length >= 2 && result.data[0][dateCol] < result.data[1][dateCol]) {
+          return { ok: false, msg: 'Řazení není sestupné — použij ORDER BY date DESC.' };
+        }
+        return { ok: true, msg: 'Přesně. Filtrování + řazení + limit zvládnuté.' };
+      }
+    },
+    {
+      title: 'Průměrná close cena na ticker',
+      task: 'Spočítej průměrnou hodnotu sloupce <code>close</code> pro každý ticker. Seřaď od nejvyšší po nejnižší.',
+      hint: '<code>GROUP BY ticker</code> + <code>AVG(close)</code> + <code>ORDER BY ... DESC</code>.',
+      check: (result) => {
+        if (!result.ok) return { ok: false, msg: 'Dotaz selhal: ' + result.error };
+        if (result.rows < 5 || result.rows > 20) return { ok: false, msg: `Očekávám jeden řádek na ticker, dostal jsem ${result.rows}.` };
+        if (result.columns.length < 2) return { ok: false, msg: 'Očekávám aspoň dva sloupce — ticker a průměr.' };
+        const avgCol = result.columns.findIndex((c, i) => i > 0 && typeof result.data[0][i] === 'number');
+        if (avgCol < 0) return { ok: false, msg: 'Nevidím číselný sloupec s průměrem.' };
+        if (result.data.length >= 2 && result.data[0][avgCol] < result.data[1][avgCol]) {
+          return { ok: false, msg: 'Není seřazeno sestupně.' };
+        }
+        return { ok: true, msg: 'Skvěle. GROUP BY + agregace funguje.' };
+      }
+    },
+    {
+      title: 'Výnos za období',
+      task: 'Pro každý ticker spočítej procentuální změnu mezi nejstarší a nejnovější <code>close</code> cenou. Pojmenuj sloupec <code>pct_change</code>. Seřaď sestupně.',
+      hint: 'Budeš potřebovat subquery nebo CTE. Vzorec: <code>(last_close - first_close) / first_close * 100</code>. V SQLite můžeš najít první a poslední cenu přes <code>(SELECT close FROM prices WHERE ticker = p.ticker ORDER BY date ASC LIMIT 1)</code>.',
+      check: (result) => {
+        if (!result.ok) return { ok: false, msg: 'Dotaz selhal: ' + result.error };
+        if (result.rows < 5 || result.rows > 20) return { ok: false, msg: `Očekávám jeden řádek na ticker.` };
+        const pctCol = result.columns.findIndex(c => c.toLowerCase().includes('pct') || c.toLowerCase().includes('change'));
+        if (pctCol < 0) return { ok: false, msg: 'Nevidím sloupec pct_change.' };
+        if (result.data.length >= 2 && result.data[0][pctCol] < result.data[1][pctCol]) {
+          return { ok: false, msg: 'Není seřazeno sestupně podle pct_change.' };
+        }
+        const max = result.data[0][pctCol];
+        if (typeof max !== 'number' || max < 100) {
+          return { ok: false, msg: 'Hodnoty nevypadají jako procenta. Nezapomeň vynásobit 100.' };
+        }
+        return { ok: true, msg: `Excellent. Nejlepší výnos: ${max.toFixed(1)}%. Tohle je přesně typ dotazu, který oddělí juniora od seniora.` };
+      }
+    }
+  ];
+
+  let quizState = QUIZ.map(() => ({ completed: false, attempts: 0 }));
+  let currentQuiz = 0;
+
+  function renderQuizProgress() {
+    const progress = document.getElementById('sql-quiz-progress');
+    progress.innerHTML = QUIZ.map((_, i) => {
+      const cls = quizState[i].completed ? 'completed' : (i === currentQuiz ? 'current' : '');
+      return `<div class="sql-quiz-dot ${cls}"></div>`;
+    }).join('');
+  }
+
+  function renderQuiz() {
+    renderQuizProgress();
+    const content = document.getElementById('sql-quiz-content');
+
+    if (currentQuiz >= QUIZ.length) {
+      content.innerHTML = `
+        <div class="sql-panel">
+          <div class="sql-quiz-complete">
+            <h2>✓ Quiz dokončen</h2>
+            <p>Prošel jsi všech ${QUIZ.length} úloh. Tohle je dobrý základ SQL pro datové role.</p>
+            <button class="sql-btn" onclick="currentQuiz=0; quizState=QUIZ.map(()=>({completed:false,attempts:0})); renderQuiz();">↺ Začít znovu</button>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const q = QUIZ[currentQuiz];
+    content.innerHTML = `
+      <div class="sql-quiz-question">
+        <div class="sql-quiz-num">Úloha ${currentQuiz + 1} / ${QUIZ.length}</div>
+        <div class="sql-quiz-title">${q.title}</div>
+        <div class="sql-quiz-task">${q.task}</div>
+      </div>
+
+      <div class="sql-panel">
+        <div class="sql-panel-header">
+          <span class="sql-panel-title">Tvůj SQL dotaz</span>
+          <button class="sql-btn secondary" onclick="showHint()">💡 Nápověda</button>
+        </div>
+        <div class="sql-panel-body">
+          <textarea id="quiz-editor" class="sql-editor" spellcheck="false" placeholder="-- Napiš dotaz pro úlohu ${currentQuiz + 1}"></textarea>
+          <div class="sql-toolbar">
+            <button class="sql-btn primary" onclick="checkQuiz()">▶ Zkontrolovat <span class="sql-kbd">Ctrl+Enter</span></button>
+            ${currentQuiz > 0 ? '<button class="sql-btn secondary" onclick="currentQuiz--; renderQuiz();">← Předchozí</button>' : ''}
+            ${quizState[currentQuiz].completed ? '<button class="sql-btn secondary" onclick="currentQuiz++; renderQuiz();">Další →</button>' : ''}
+          </div>
+          <div id="hint-area"></div>
+          <div id="feedback-area"></div>
+          <div id="quiz-results"></div>
+        </div>
+      </div>
+    `;
+
+    const qe = document.getElementById('quiz-editor');
+    qe.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); checkQuiz(); }
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const s = qe.selectionStart, end = qe.selectionEnd;
+        qe.value = qe.value.substring(0, s) + '  ' + qe.value.substring(end);
+        qe.selectionStart = qe.selectionEnd = s + 2;
+      }
+    });
+    qe.focus();
+  }
+
+  function showHint() {
+    const q = QUIZ[currentQuiz];
+    document.getElementById('hint-area').innerHTML = `<div class="sql-hint-box"><strong>Nápověda:</strong> ${q.hint}</div>`;
+  }
+
+  function checkQuiz() {
+    const sql = document.getElementById('quiz-editor').value.trim();
+    if (!sql) return;
+
+    const feedbackArea = document.getElementById('feedback-area');
+    const resultsArea = document.getElementById('quiz-results');
+
+    let result;
+    try {
+      const t0 = performance.now();
+      const r = db.exec(sql);
+      const elapsed = (performance.now() - t0).toFixed(1);
+      if (!r.length) {
+        result = { ok: true, rows: 0, data: [], columns: [] };
+      } else {
+        result = { ok: true, rows: r[0].values.length, data: r[0].values, columns: r[0].columns, elapsed };
+      }
+    } catch (e) {
+      result = { ok: false, error: e.message };
+    }
+
+    if (result.ok && result.data.length > 0) {
+      const preview = result.data.slice(0, 15);
+      resultsArea.innerHTML = `
+        <div style="margin-top: 1rem;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.5rem;">Výsledek (${result.rows} ${result.rows === 1 ? 'řádek' : 'řádků'}, prvních 15)</div>
+          <div class="sql-results-table-wrap" style="max-height: 280px;">
+            <table class="sql-results-table">
+              <thead><tr>${result.columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+              <tbody>${preview.map(row => `<tr>${row.map(c => `<td>${c === null ? 'NULL' : (typeof c === 'number' ? (Number.isInteger(c) ? c : c.toFixed(2)) : c)}</td>`).join('')}</tr>`).join('')}</tbody>
+            </table>
+          </div>
+        </div>`;
+    } else {
+      resultsArea.innerHTML = '';
+    }
+
+    quizState[currentQuiz].attempts++;
+    const check = QUIZ[currentQuiz].check(result);
+
+    if (check.ok) {
+      quizState[currentQuiz].completed = true;
+      feedbackArea.innerHTML = `<div class="sql-quiz-feedback success">✓ ${check.msg}</div>`;
+      setTimeout(() => {
+        currentQuiz++;
+        renderQuiz();
+      }, 1800);
+    } else {
+      const cls = result.ok ? 'hint' : 'error';
+      feedbackArea.innerHTML = `<div class="sql-quiz-feedback ${cls}">${result.ok ? '⚠' : '✕'} ${check.msg}</div>`;
+    }
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  initDB().catch(err => {
+    document.getElementById('sql-loading').innerHTML = `<div style="color: var(--loss);">Chyba při inicializaci: ${err.message}</div>`;
+  });
+
+  document.querySelector('[data-tab="quiz"]').addEventListener('click', () => {
+    if (!document.getElementById('sql-quiz-content').innerHTML) renderQuiz();
+  });
+  </script>
+</Base>
