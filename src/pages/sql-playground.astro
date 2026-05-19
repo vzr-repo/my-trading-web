@@ -285,8 +285,47 @@ SELECT ticker, close FROM prices LIMIT 5;"></textarea>
     </div>
   </section>
 
-  <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
   <script is:inline>
+  // ============================================================
+  // SQL Playground — wrapped in init function to support
+  // Astro ClientRouter (View Transitions) re-running on nav
+  // ============================================================
+  (function () {
+    if (window.__sqlPlaygroundInited) return;
+
+    function loadSqlJsScript() {
+      return new Promise((resolve, reject) => {
+        if (window.initSqlJs) return resolve();
+        const existing = document.querySelector('script[data-sqljs]');
+        if (existing) {
+          existing.addEventListener('load', () => resolve());
+          existing.addEventListener('error', reject);
+          return;
+        }
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js';
+        s.dataset.sqljs = '1';
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('Nepodařilo se načíst sql.js z CDN'));
+        document.head.appendChild(s);
+      });
+    }
+
+    function boot() {
+      if (window.__sqlPlaygroundInited) return;
+      if (!document.getElementById('sql-editor')) return; // not on this page
+      window.__sqlPlaygroundInited = true;
+      run();
+    }
+
+    document.addEventListener('astro:page-load', boot);
+    if (document.readyState !== 'loading') {
+      boot();
+    } else {
+      document.addEventListener('DOMContentLoaded', boot);
+    }
+
+    function run() {
   // ============================================================
   // DATABASE INIT — fetches real prices.db from /data/
   // ============================================================
@@ -294,6 +333,7 @@ SELECT ticker, close FROM prices LIMIT 5;"></textarea>
   let totalRows = 0;
 
   async function initDB() {
+    await loadSqlJsScript();
     const SQL = await initSqlJs({
       locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}`
     });
@@ -645,6 +685,20 @@ SELECT ticker, close FROM prices LIMIT 5;"></textarea>
   }
 
   // ============================================================
+  // Expose for inline onclick handlers in quiz UI
+  // ============================================================
+  window.showHint = showHint;
+  window.checkQuiz = checkQuiz;
+  window.renderQuiz = renderQuiz;
+  Object.defineProperty(window, 'currentQuiz', {
+    get: () => currentQuiz, set: (v) => { currentQuiz = v; }, configurable: true
+  });
+  Object.defineProperty(window, 'quizState', {
+    get: () => quizState, set: (v) => { quizState = v; }, configurable: true
+  });
+  window.QUIZ = QUIZ;
+
+  // ============================================================
   // INIT
   // ============================================================
   initDB().catch(err => {
@@ -654,5 +708,8 @@ SELECT ticker, close FROM prices LIMIT 5;"></textarea>
   document.querySelector('[data-tab="quiz"]').addEventListener('click', () => {
     if (!document.getElementById('sql-quiz-content').innerHTML) renderQuiz();
   });
+
+    } // end run()
+  })();
   </script>
 </Base>
