@@ -31,6 +31,10 @@
         {
           "name": "Data Engineering Quest",
           "url": "/quiz"
+        },
+        {
+          "name": "SQL Playground",
+          "url": "/sql-playground"
         }
       ]
     },
