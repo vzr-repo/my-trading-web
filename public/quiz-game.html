@@ -309,6 +309,8 @@
             font-weight: 500;
             line-height: 1.4;
             width: 100%;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .answer:hover:not(:disabled) {
@@ -445,6 +447,8 @@
             text-transform: uppercase;
             cursor: pointer;
             transition: all 0.15s;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
         .next-btn:hover {
             background: #fff;
@@ -533,6 +537,8 @@
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
         .start-btn:hover {
             transform: translateY(-3px);
@@ -1031,6 +1037,16 @@
             answered = false;
             startQuiz();
         }
+
+        // Auto-resize: notify parent iframe of content height changes
+        function notifyHeight() {
+            const height = document.documentElement.scrollHeight;
+            window.parent.postMessage({ type: 'quiz-resize', height }, '*');
+        }
+        if (typeof ResizeObserver !== 'undefined') {
+            new ResizeObserver(notifyHeight).observe(document.body);
+        }
+        notifyHeight();
     </script>
 </body>
 </html>

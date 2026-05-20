@@ -9,10 +9,12 @@ import Base from "@/layouts/Base.astro";
 >
   <div class="game-wrapper">
     <iframe
+      id="quiz-frame"
       src="/quiz-game.html"
       title="Data Engineering Quest — Czech Company Research Quiz"
       width="100%"
       frameborder="0"
+      scrolling="no"
       transition:animate="none"
     ></iframe>
   </div>
@@ -31,3 +33,14 @@ import Base from "@/layouts/Base.astro";
     border: none;
   }
 </style>
+
+<script>
+  window.addEventListener("message", (e) => {
+    if (e.data?.type === "quiz-resize") {
+      const iframe = document.getElementById("quiz-frame") as HTMLIFrameElement;
+      if (iframe) {
+        iframe.style.height = e.data.height + "px";
+      }
+    }
+  });
+</script>
