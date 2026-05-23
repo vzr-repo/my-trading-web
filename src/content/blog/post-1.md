@@ -1,49 +1,45 @@
 ---
-title: "Jak jsem postavil svoji první trading pipeline"
+title: "Proč jsem opustil Excel a začal se učit Data Engineering"
 meta_title: ""
-description: "Od nuly k automatizovanému stahování dat pro 15 akcií."
+description: "Z finančního controllingu na Data Engineering — jak frustrace z manuálního reportingu přivedla k vlastnímu projektu trading data pipeline."
 date: 2026-05-01T23:00:00Z
 image: "/images/image-placeholder.png"
-categories: ["Data Engineering", "Trading"]
+categories: ["Data Engineering", "Career"]
 author: "Jakub Vozar"
-tags: ["python", "data engineering", "trading"]
+tags: ["data-engineering", "career", "intro"]
 draft: false
 ---
 
-Rozhodl jsem se naučit data engineering. Ne přes kurzy, ale přes reálný projekt — pipeline pro analýzu finančních trhů. Tady je, jak to zatím vypadá.
+> 💡 **TL;DR:** Z finančního controllingu na Data Engineering — jak frustrace z Excelu, rutinního reportingu a manuálního lepení dat přivedla k rozhodnutí přebudovat celý přístup k práci s daty. A proč jsem k tomu použil trading.
 
-## Proč zrovna trading pipeline?
+## Začalo to frustrací, ne ambicí
 
-Obchoduji forex a akcie. Vždycky jsem si dělal analýzy ručně v Excelu a Power BI. Jenže čím víc jsem se zajímal o data engineering, tím víc mi přišlo nesmyslné tahat data ručně, když to může dělat script sám.
+Roky jsem pracoval ve finančním controllingu. S daty jsem byl v každodenním kontaktu — jenže způsobem, který mě postupně přestával bavit. Každý měsíc stejný rituál: manuální export z ERP, kopírování do Excelu, VLOOKUP přes VLOOKUP, a na konci tabulka, která sice vypadá přehledně, ale stojí tě půl dne práce a nikdo neví, co se stane, když se změní jeden vstupní soubor.
 
-Takže projekt: postavit end-to-end pipeline od stahování dat přes backtesting až po publikované dashboardy. Žádné kurzy, žádné tutoriály. Jen Python, reálná data a hodně chyb.
+Přitom jsem věděl, že to jde jinak. Jednou jsem pracoval v prostředí, kde reporty běžely na SQL datech s denním automatickým refreshem — analytická práce tam nebyla o lepení dat, ale o skutečné interpretaci výsledků. Byl to záblesk toho, jak by to mohlo vypadat. A ten záblesk mi pak dlouho nedal spát.
 
-## Fáze 1 — forex data a první backtest
+## Zlomový moment: přesun na Data & BI Engineer
 
-Začal jsem jednoduše. Script v Pythonu, který stáhne hodinová data pro EURUSD přes yfinance, uloží je do Parquetu a spustí jednoduchý SMA crossover backtest.
+Dostanu příležitost přesunout se na pozici **Data & BI Engineera**. BI část jsem přibližně znal — reporty, dashboardy, datové modely. Ale Data Engineering? To byl pro mě větší oříšek. Věděl jsem, že tam patří Python, SQL, cloudové služby, pipelines — ale jak to všechno funguje dohromady a jak se to naučit efektivně, to jsem netušil.
 
-Výsledek byl průměrný — strategie moc nefunguje. Ale to nebyl cíl. Cílem bylo postavit pipeline a pochopit, jak data tečou od zdroje po vizualizaci.
+Rozhodl jsem se přistoupit k tomu tak, jak přistupuji k věcem, které mě baví: **najít si vlastní projekt, který mě opravdu zajímá, a na něm se to naučit v praxi.**
 
-Výsledky backtestingu jsem exportoval do CSV a postavil Power BI dashboard se čtyřmi vizuály: equity curve, drawdown, seznam obchodů a měsíční PnL. Ten dashboard teď visí live na tomhle webu.
+## Proč zrovna trading a finance
 
-## Fáze 2 — akciová data a Alpha Vantage API
+Investování a trading jsou oblastí, která mě fascinuje dlouhodobě. Grafy, data, rozhodování pod nejistotou — je tam všechno, co mě přitahuje na analytické práci. A navíc: finanční data jsou volně dostupná, strukturovaná a ideální pro trénink datových dovedností.
 
-Ve druhé fázi jsem přidal akciová data. Vybral jsem 15 tickerů — tech akcie jako AAPL, MSFT, NVDA a fintech jako Visa, Mastercard nebo Coinbase — plus SPY jako benchmark.
+Spojení bylo přirozené. Místo abych se učil Data Engineering na fiktivních příkladech, budu pracovat s reálnými akciovými a forexovými daty. Budu stavět pipeline, která něco skutečně dělá — stahuje data, testuje strategie, zobrazuje výsledky. A při tom se naučím Python, Parquet, SQL, cloud a vše ostatní, co k tomu patří.
 
-Pro stahování dat jsem poprvé pracoval s externím REST API. Alpha Vantage má jednoduché volání, JSON odpověď a OHLCV strukturu — stejnou, jakou znám z forexu.
+## Co tady najdeš
 
-Postavil jsem script, který prochází všechny tickery, stáhne data, uloží do Parquetu a přeskočí tickery, které už má aktuální. Celé to běží automaticky každý den v 23:00 přes Windows Task Scheduler.
+Tento web není jen blog. Je to živý deník projektu — **trading data pipeline**, kterou stavím postupně, fázi po fázi, a dokumentuji každý krok. Co se naučím, jaké problémy řeším, co funguje a co ne.
 
-## Co jsem se naučil
+Součástí webu jsou i interaktivní dashboardy s výsledky backtestů a sekce **Games**, kde si můžeš vyzkoušet Python nebo SQL znalosti formou miniher — stejně jako já, jen o něco méně bolestně.
 
-Python je mnohem přímočařejší, než jsem čekal. Největší překvapení byl způsob, jak věci do sebe zapadají — dict, loop, f-string. Jednoduché koncepty, ale když je dáš dohromady, najednou máš fungující pipeline.
+Web vznikl s pomocí Astro frameworku, běží na Cloudflare Pages a celý zdrojový kód je veřejně dostupný na GitHubu. Žádný WordPress, žádný page builder — jen kód, Git a vlastní doména.
 
-Druhá věc: API rate limity jsou realita. Alpha Vantage free tier má 25 volání za den — ne 500, jak jsem původně předpokládal. Script mi spadl uprostřed stahování a musel jsem přidat error handling a logiku pro přeskakování existujících dat.
+## Co přijde dál
 
-Třetí věc: `.env` soubory a `.gitignore` nejsou volitelné. API klíč nesmí nikdy skončit v Gitu. Nastavit to správně trvá 5 minut a ušetří to pozdější problémy.
+V dalších postech popisuji konkrétní kroky projektu: jak jsem začal s Pythonem a yfinance, jak funguje backtesting SMA strategie na EUR/USD, jak jsem narazil na API limity a co z toho vzešlo, a jak postupně stavím vlastní akciovou databázi.
 
-## Co je dál
-
-Data mám. Teď přijde sektorová analýza — porovnání výkonnosti tech vs fintech vs benchmark SPY. A backtesting na akciových datech, kde chci testovat stejnou SMA strategii, jakou jsem použil na forexu.
-
-Kód je na GitHubu, dashboardy jsou živé. Jede to.
+Pokud tě zajímá Data Engineering, trading, nebo jednoduše to, jak se dá učit něco nového efektivně přes vlastní projekt — čti dál. 👇
