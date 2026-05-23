@@ -9,13 +9,17 @@
       "url": "/about"
     },
     {
-      "name": "Dashboard",
-      "url": "/dashboard",
+      "name": "Dashboards",
+      "url": "/dashboards",
       "hasChildren": true,
       "children": [
         {
-          "name": "Trading Dashboard",
-          "url": "/dashboard"
+          "name": "Všechny dashboardy",
+          "url": "/dashboards"
+        },
+        {
+          "name": "Trading Backtest",
+          "url": "/dashboards/trading-backtest"
         }
       ]
     },
@@ -49,8 +53,8 @@
       "url": "/blog"
     },
     {
-      "name": "Dashboard",
-      "url": "/dashboard"
+      "name": "Dashboards",
+      "url": "/dashboards"
     },
     {
       "name": "PyDrill — Python",
